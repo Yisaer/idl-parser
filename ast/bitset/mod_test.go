@@ -11,7 +11,7 @@ func TestParseBitSetField(t *testing.T) {
 	`
 	result := parseField(code)
 	require.Equal(t, result.Output.Name, "a")
-	require.Equal(t, result.Output.Type.Width, 1)
+	require.Equal(t, result.Output.Type.Width, uint8(1))
 }
 
 func TestParseBitSet(t *testing.T) {
