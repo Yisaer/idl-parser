@@ -1,6 +1,6 @@
 # idlparser
 
-OMG IDL Parser written in go by [gomme](https://github.com/oleiade/gomme)
+OMG IDL Parser written in go inspired by [gomme](https://github.com/oleiade/gomme)
 
 ## Example
 
