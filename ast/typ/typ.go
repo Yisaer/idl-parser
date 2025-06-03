@@ -19,4 +19,5 @@ const (
 	LongLongType
 	UnsignedLongLongType
 	SelfDefinedTypeType
+	SequenceType
 )

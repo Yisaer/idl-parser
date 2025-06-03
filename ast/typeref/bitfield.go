@@ -7,7 +7,7 @@ import (
 )
 
 type BitFieldType struct {
-	Width uint8
+	Width uint8 `json:"width"`
 }
 
 func (BitFieldType) isTypeRef() {}
