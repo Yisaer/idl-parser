@@ -5,9 +5,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/yisaer/idl-parser/ast/annotation"
 	"github.com/yisaer/idl-parser/ast/bitset"
 	"github.com/yisaer/idl-parser/ast/struct_type"
 	"github.com/yisaer/idl-parser/ast/typ"
+	"github.com/yisaer/idl-parser/ast/typeref"
 )
 
 func TestParsing(t *testing.T) {
@@ -44,4 +46,58 @@ func TestParsing(t *testing.T) {
 	require.Equal(t, second.Fields[1].Name, "id")
 	require.Equal(t, second.Fields[1].Type.TypeRefType(), typ.SelfDefinedTypeType)
 	require.Equal(t, second.Fields[1].Type.TypeName(), "idbits")
+}
+
+func TestParseModule(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected Module
+	}{
+		{
+			input: `module spi {
+						bitset idbits {
+							bitfield<4> bid; // 4 bits for bus_id
+						};
+
+						struct CANFrame {
+							@format octet header;
+							@format(a=b) idbits id;
+						};
+					}`,
+			expected: Module{
+				Name: "spi",
+				Content: []ModuleContent{
+					bitset.BitSet{
+						Name: "idbits",
+						Fields: []bitset.Field{
+							{
+								Name: "bid",
+								Type: typeref.BitFieldType{Width: uint8(4)},
+							},
+						},
+					},
+					struct_type.Struct{
+						Name: "CANFrame",
+						Fields: []struct_type.Field{
+							{
+								Name:        "header",
+								Annotations: []annotation.Annotation{{Name: "format"}},
+								Type:        typeref.OctetType{},
+							},
+							{
+								Name:        "id",
+								Annotations: []annotation.Annotation{{Name: "format", Values: map[string]string{"a": "b"}}},
+								Type:        typeref.TypeName{Name: "idbits"},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		result := Parse(test.input)
+		require.Equal(t, test.expected, result.Output)
+	}
 }

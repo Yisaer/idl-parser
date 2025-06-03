@@ -31,10 +31,27 @@ func ParseEmpty0(code string) gomme.Result[string, string] {
 			)))(code)
 }
 
+func ParseEmpty1(code string) gomme.Result[string, string] {
+	return gomme.Recognize(
+		gomme.Many1(
+			gomme.Alternative(
+				ParseComment,
+				gomme.Whitespace1[string](),
+			)))(code)
+}
+
 func InEmpty[Output any](parser gomme.Parser[string, Output]) gomme.Parser[string, Output] {
 	return gomme.Delimited(
 		ParseEmpty0,
 		parser,
 		ParseEmpty0,
 	)
+}
+
+func Identifier(code string) gomme.Result[string, string] {
+	return gomme.Recognize(
+		gomme.Pair(
+			gomme.Alpha1[string](),
+			gomme.Alphanumeric0[string](),
+		))(code)
 }
