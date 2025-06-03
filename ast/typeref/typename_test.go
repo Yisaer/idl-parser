@@ -3,11 +3,11 @@ package typeref
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseTypeName(t *testing.T) {
 	code := "idbits id;"
 	result := ParseTypeName(code)
-	assert.Equal(t, "idbits", result.Output.Name)
+	require.Equal(t, "idbits", result.Output.Name)
 }

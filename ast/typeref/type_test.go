@@ -3,7 +3,7 @@ package typeref
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/yisaer/idl-parser/ast/typ"
 )
@@ -20,7 +20,7 @@ func TestParseBitField(t *testing.T) {
 
 	for _, test := range tests {
 		result := ParseBitField(test.input)
-		assert.Equal(t, test.expected, result.Output)
+		require.Equal(t, test.expected, result.Output)
 	}
 }
 
@@ -34,7 +34,7 @@ func TestShort(t *testing.T) {
 
 	for _, test := range tests {
 		result := ParseShort(test.input)
-		assert.Equal(t, test.expected, result.Output)
+		require.Equal(t, test.expected, result.Output)
 	}
 }
 
@@ -49,7 +49,7 @@ func TestUnsignedShort(t *testing.T) {
 
 	for _, test := range tests {
 		result := ParseUnsignedShort(test.input)
-		assert.Equal(t, test.expected, result.Output)
+		require.Equal(t, test.expected, result.Output)
 	}
 }
 
@@ -63,7 +63,7 @@ func TestLong(t *testing.T) {
 
 	for _, test := range tests {
 		result := ParseLong(test.input)
-		assert.Equal(t, test.expected, result.Output)
+		require.Equal(t, test.expected, result.Output)
 	}
 }
 
@@ -78,7 +78,7 @@ func TestUnsignedLong(t *testing.T) {
 
 	for _, test := range tests {
 		result := ParseUnsignedLong(test.input)
-		assert.Equal(t, typ.UnsignedLongType, result.Output.TypeRefType())
+		require.Equal(t, typ.UnsignedLongType, result.Output.TypeRefType())
 	}
 }
 
@@ -93,7 +93,7 @@ func TestLongLong(t *testing.T) {
 
 	for _, test := range tests {
 		result := ParseLongLong(test.input)
-		assert.Equal(t, test.expected, result.Output)
+		require.Equal(t, test.expected, result.Output)
 	}
 }
 
@@ -108,6 +108,6 @@ func TestUnsignedLongLong(t *testing.T) {
 
 	for _, test := range tests {
 		result := ParseUnsignedLongLong(test.input)
-		assert.Equal(t, test.expected, result.Output)
+		require.Equal(t, test.expected, result.Output)
 	}
 }
