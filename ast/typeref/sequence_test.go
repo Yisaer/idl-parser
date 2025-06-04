@@ -11,12 +11,12 @@ func TestSeq(t *testing.T) {
 		input    string
 		expected TypeRef
 	}{
-		{"sequence<octet>", Sequence{InnerType: OctetType{}}},
-		{"sequence<long long>", Sequence{InnerType: LongLongType{}}},
-		{"sequence<long>", Sequence{InnerType: LongType{}}},
-		{"sequence<unsigned long>", Sequence{InnerType: UnsignedLongType{}}},
-		{"sequence<unsigned long long>", Sequence{InnerType: UnsignedLongLongType{}}},
-		{"sequence<idbits>", Sequence{InnerType: TypeName{Name: "idbits"}}},
+		{"sequence<octet>", Sequence{SelfType: "sequence", InnerType: OctetType{SelfType: "octet"}}},
+		{"sequence<long long>", Sequence{SelfType: "sequence", InnerType: LongLongType{SelfType: "long long"}}},
+		{"sequence<long>", Sequence{SelfType: "sequence", InnerType: LongType{SelfType: "long"}}},
+		{"sequence<unsigned long>", Sequence{SelfType: "sequence", InnerType: UnsignedLongType{SelfType: "unsigned long"}}},
+		{"sequence<unsigned long long>", Sequence{SelfType: "sequence", InnerType: UnsignedLongLongType{SelfType: "unsigned long long"}}},
+		{"sequence<idbits>", Sequence{SelfType: "sequence", InnerType: TypeName{Name: "idbits", SelfType: "idbits"}}},
 	}
 
 	for _, test := range tests {

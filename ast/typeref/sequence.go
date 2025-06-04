@@ -8,7 +8,12 @@ import (
 )
 
 type Sequence struct {
+	SelfType  string  `json:"self_type"`
 	InnerType TypeRef `json:"inner_type"`
+}
+
+func NewSequence(innerType TypeRef) Sequence {
+	return Sequence{SelfType: "sequence", InnerType: innerType}
 }
 
 func (s Sequence) TypeRefType() typ.FieldRefType {
@@ -16,7 +21,7 @@ func (s Sequence) TypeRefType() typ.FieldRefType {
 }
 
 func (s Sequence) TypeName() string {
-	return s.InnerType.TypeName()
+	return "sequence"
 }
 
 func ParseSequence(code string) gomme.Result[Sequence, string] {
@@ -29,7 +34,7 @@ func ParseSequence(code string) gomme.Result[Sequence, string] {
 				gomme.Token[string](">"),
 			))),
 		func(innerType TypeRef) (Sequence, error) {
-			return Sequence{InnerType: innerType}, nil
+			return NewSequence(innerType), nil
 		},
 	)(code)
 	return result
