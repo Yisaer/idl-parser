@@ -62,7 +62,7 @@ module spi {
 
 	struct CANFrame {
 		@format octet header;
-		@format(a=b) idbits id;
+		@format(a="b",key=123) idbits id;
 	};
 }
 ```
