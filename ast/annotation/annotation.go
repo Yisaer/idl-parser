@@ -12,6 +12,18 @@ type Annotation struct {
 	Values map[string]string `json:"values,omitempty"`
 }
 
+func parseQuotedString(code string) gomme.Result[string, string] {
+	return gomme.Delimited(
+		gomme.Token[string](`"`),
+		gomme.Recognize(
+			gomme.Pair(
+				gomme.Alpha1[string](),
+				gomme.Alphanumeric0[string](),
+			)),
+		gomme.Token[string](`"`),
+	)(code)
+}
+
 func parseKVPairs(code string) gomme.Result[map[string]string, string] {
 	return gomme.Map(gomme.SeparatedList0(
 		gomme.SeparatedPair(
@@ -21,11 +33,13 @@ func parseKVPairs(code string) gomme.Result[map[string]string, string] {
 					gomme.Alphanumeric0[string](),
 				)),
 			utils.InEmpty(gomme.Token[string]("=")),
-			gomme.Recognize(
-				gomme.Pair(
-					gomme.Alpha1[string](),
-					gomme.Alphanumeric0[string](),
-				)),
+			gomme.Alternative(
+				parseQuotedString,
+				gomme.Recognize(
+					gomme.Pair(
+						gomme.Alpha1[string](),
+						gomme.Alphanumeric0[string](),
+					))),
 		),
 		utils.InEmpty(gomme.Token[string](",")),
 	),
