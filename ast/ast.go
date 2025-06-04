@@ -19,14 +19,14 @@ type Module struct {
 }
 
 func Parse(code string) gomme.Result[Module, string] {
-	bitsetTokenResult := gomme.Token[string]("module")(code)
-	if bitsetTokenResult.Err != nil {
-		return gomme.Failure[string, Module](bitsetTokenResult.Err, code)
+	moduleTokenResult := utils.InLeftEmpty(gomme.Token[string]("module"))(code)
+	if moduleTokenResult.Err != nil {
+		return gomme.Failure[string, Module](moduleTokenResult.Err, code)
 	}
 	nameResult :=
 		utils.InEmpty(
 			gomme.Recognize(gomme.Pair(gomme.Alpha1[string](), gomme.Alphanumeric0[string]())),
-		)(bitsetTokenResult.Remaining)
+		)(moduleTokenResult.Remaining)
 	if nameResult.Err != nil {
 		return gomme.Failure[string, Module](nameResult.Err, code)
 	}
