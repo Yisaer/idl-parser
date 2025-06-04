@@ -109,7 +109,8 @@ func TestModuleJson(t *testing.T) {
 		expected string
 	}{
 		{
-			input: `module spi {
+			input: `
+					module spi {
 						bitset IdBits {
 							bitfield<4> bid; 
 							bitfield<12> cid;
