@@ -13,9 +13,9 @@ func TestParseBitField(t *testing.T) {
 		input    string
 		expected TypeRef
 	}{
-		{"bitfield<8>", BitFieldType{Width: 8}},
-		{"bitfield<16>", BitFieldType{Width: 16}},
-		{"bitfield<32>", BitFieldType{Width: 32}},
+		{"bitfield<8>", BitFieldType{Width: 8, SelfType: "bitfield"}},
+		{"bitfield<16>", BitFieldType{Width: 16, SelfType: "bitfield"}},
+		{"bitfield<32>", BitFieldType{Width: 32, SelfType: "bitfield"}},
 	}
 
 	for _, test := range tests {
@@ -29,7 +29,7 @@ func TestShort(t *testing.T) {
 		input    string
 		expected TypeRef
 	}{
-		{"short", ShortType{}},
+		{"short", ShortType{SelfType: "short"}},
 	}
 
 	for _, test := range tests {
@@ -43,8 +43,8 @@ func TestUnsignedShort(t *testing.T) {
 		input    string
 		expected TypeRef
 	}{
-		{"unsigned short", UnsignedShortType{}},
-		{"unsigned  short", UnsignedShortType{}},
+		{"unsigned short", UnsignedShortType{SelfType: "unsigned short"}},
+		{"unsigned  short", UnsignedShortType{SelfType: "unsigned short"}},
 	}
 
 	for _, test := range tests {
@@ -58,7 +58,7 @@ func TestLong(t *testing.T) {
 		input    string
 		expected TypeRef
 	}{
-		{"long", LongType{}},
+		{"long", LongType{SelfType: "long"}},
 	}
 
 	for _, test := range tests {
@@ -72,8 +72,8 @@ func TestUnsignedLong(t *testing.T) {
 		input    string
 		expected TypeRef
 	}{
-		{"unsigned long", UnsignedLongType{}},
-		{"unsigned  long", UnsignedLongType{}},
+		{"unsigned long", UnsignedLongType{SelfType: "unsigned long"}},
+		{"unsigned  long", UnsignedLongType{SelfType: "unsigned long"}},
 	}
 
 	for _, test := range tests {
@@ -87,8 +87,8 @@ func TestLongLong(t *testing.T) {
 		input    string
 		expected TypeRef
 	}{
-		{"long long", LongLongType{}},
-		{"long  long", LongLongType{}},
+		{"long long", LongLongType{SelfType: "long long"}},
+		{"long  long", LongLongType{SelfType: "long long"}},
 	}
 
 	for _, test := range tests {
@@ -102,8 +102,8 @@ func TestUnsignedLongLong(t *testing.T) {
 		input    string
 		expected TypeRef
 	}{
-		{"unsigned long long", UnsignedLongLongType{}},
-		{"unsigned  long  long", UnsignedLongLongType{}},
+		{"unsigned long long", UnsignedLongLongType{SelfType: "unsigned long long"}},
+		{"unsigned  long  long", UnsignedLongLongType{SelfType: "unsigned long long"}},
 	}
 
 	for _, test := range tests {

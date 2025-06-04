@@ -1,6 +1,8 @@
 package ast
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -72,7 +74,7 @@ func TestParseModule(t *testing.T) {
 						Fields: []bitset.Field{
 							{
 								Name: "bid",
-								Type: typeref.BitFieldType{Width: uint8(4)},
+								Type: typeref.BitFieldType{Width: uint8(4), SelfType: "bitfield"},
 							},
 						},
 					},
@@ -82,12 +84,12 @@ func TestParseModule(t *testing.T) {
 							{
 								Name:        "header",
 								Annotations: []annotation.Annotation{{Name: "format"}},
-								Type:        typeref.OctetType{},
+								Type:        typeref.OctetType{SelfType: "octet"},
 							},
 							{
 								Name:        "id",
 								Annotations: []annotation.Annotation{{Name: "format", Values: map[string]string{"a": "b"}}},
-								Type:        typeref.TypeName{Name: "idbits"},
+								Type:        typeref.TypeName{Name: "idbits", SelfType: "idbits"},
 							},
 						},
 					},
@@ -99,5 +101,52 @@ func TestParseModule(t *testing.T) {
 	for _, test := range tests {
 		result := Parse(test.input)
 		require.Equal(t, test.expected, result.Output)
+	}
+}
+
+func TestModuleJson(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{
+			input: `module spi {
+						bitset IdBits {
+							bitfield<4> bid; 
+							bitfield<12> cid;
+						};
+
+						bitset LBits {
+							bitfield<1> isUpdate;      
+							bitfield<7> plen;
+						};
+
+						struct CANFrame {
+							sequence<octet> payload;
+						};
+          			}
+`,
+		},
+
+		//{
+		//	input: `module spi {
+		//				bitset idbits {
+		//					bitfield<4> bid; // 4 bits for bus_id
+		//				};
+		//
+		//				struct CANFrame {
+		//					@format octet header;
+		//					@format(a=b) idbits id;
+		//				};
+		//			}`,
+		//	expected: `{"name":"spi","content":[{"name":"idbits","fields":[{"type":{"width":4,"self_type":"bitfield"},"name":"bid"}]},{"name":"CANFrame","fields":[{"annotations":[{"name":"format"}],"type":{"self_type":"octet"},"name":"header"},{"annotations":[{"name":"format","values":{"a":"b"}}],"type":{"self_type":"idbits","name":"idbits"},"name":"id"}]}]}`,
+		//},
+	}
+	for _, test := range tests {
+		result := Parse(test.input)
+		require.Nil(t, result.Err)
+		v, err := json.Marshal(result.Output)
+		require.NoError(t, err)
+		fmt.Println(string(v))
 	}
 }

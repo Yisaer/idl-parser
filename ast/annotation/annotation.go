@@ -9,7 +9,7 @@ import (
 type Annotations []Annotation
 type Annotation struct {
 	Name   string            `json:"name"`
-	Values map[string]string `json:"values"`
+	Values map[string]string `json:"values,omitempty"`
 }
 
 func parseKVPairs(code string) gomme.Result[map[string]string, string] {

@@ -7,16 +7,22 @@ import (
 )
 
 type BitFieldType struct {
-	Width uint8 `json:"width"`
+	Width    uint8  `json:"width"`
+	SelfType string `json:"self_type"`
 }
 
-func (BitFieldType) isTypeRef() {}
+func NewBitField(width uint8) BitFieldType {
+	return BitFieldType{
+		Width:    width,
+		SelfType: "bitfield",
+	}
+}
 
-func (BitFieldType) TypeRefType() typ.FieldRefType {
+func (bt BitFieldType) TypeRefType() typ.FieldRefType {
 	return typ.BitFieldType
 }
 
-func (b BitFieldType) TypeName() string { return "bitset" }
+func (bt BitFieldType) TypeName() string { return "bitset" }
 
 func ParseBitField(code string) gomme.Result[BitFieldType, string] {
 	return gomme.Map(
@@ -29,7 +35,7 @@ func ParseBitField(code string) gomme.Result[BitFieldType, string] {
 			),
 		),
 		func(pair gomme.PairContainer[string, uint8]) (BitFieldType, error) {
-			return BitFieldType{Width: pair.Right}, nil
+			return NewBitField(pair.Right), nil
 		},
 	)(code)
 }

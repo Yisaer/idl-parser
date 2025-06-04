@@ -59,12 +59,12 @@ func TestStructFieldAnnotations(t *testing.T) {
 				Fields: []Field{
 					{
 						Name:        "header",
-						Type:        typeref.OctetType{},
+						Type:        typeref.OctetType{SelfType: "octet"},
 						Annotations: []annotation.Annotation{{Name: "format", Values: map[string]string{"a": "b"}}},
 					},
 					{
 						Name: "h2",
-						Type: typeref.LongType{},
+						Type: typeref.LongType{SelfType: "long"},
 					},
 				},
 			},
@@ -78,7 +78,7 @@ func TestStructFieldAnnotations(t *testing.T) {
 				Fields: []Field{
 					{
 						Name:        "header",
-						Type:        typeref.OctetType{},
+						Type:        typeref.OctetType{SelfType: "octet"},
 						Annotations: []annotation.Annotation{{Name: "format"}},
 					},
 				},

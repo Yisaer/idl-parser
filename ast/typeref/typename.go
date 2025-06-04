@@ -7,7 +7,8 @@ import (
 )
 
 type TypeName struct {
-	Name string `json:"name"`
+	SelfType string `json:"self_type"`
+	Name     string `json:"name"`
 }
 
 func (TypeName) TypeRefType() typ.FieldRefType {
@@ -27,7 +28,7 @@ func ParseTypeName(code string) gomme.Result[TypeName, string] {
 			),
 		),
 		func(name string) (TypeName, error) {
-			return TypeName{Name: name}, nil
+			return TypeName{Name: name, SelfType: name}, nil
 		},
 	)(code)
 }

@@ -10,7 +10,7 @@ import (
 )
 
 type Field struct {
-	Annotations annotation.Annotations `json:"annotations"`
+	Annotations annotation.Annotations `json:"annotations,omitempty"`
 	Type        typeref.TypeRef        `json:"type"`
 	Name        string                 `json:"name"`
 }
