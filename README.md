@@ -10,9 +10,13 @@ An OMG IDL (Interface Definition Language) parser written in Go, inspired by gom
   * Modules
   * Structs
   * Bitsets
-  * Annotations
   * Bitfields
+  * Octet
+  * Short / Unsigned Short
+  * Long / Unsigned Long / Long Long / Unsigned Long Long
+  * Sequence
   * Type references
+  * Annotations
 * Simple API with Parse() function
 * Comprehensive test coverage
 
