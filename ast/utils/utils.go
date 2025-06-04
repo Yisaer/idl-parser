@@ -40,6 +40,13 @@ func ParseEmpty1(code string) gomme.Result[string, string] {
 			)))(code)
 }
 
+func InLeftEmpty[Output any](parser gomme.Parser[string, Output]) gomme.Parser[string, Output] {
+	return gomme.Preceded(
+		ParseEmpty0,
+		parser,
+	)
+}
+
 func InEmpty[Output any](parser gomme.Parser[string, Output]) gomme.Parser[string, Output] {
 	return gomme.Delimited(
 		ParseEmpty0,

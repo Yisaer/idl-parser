@@ -91,3 +91,11 @@ func TestStructFieldAnnotations(t *testing.T) {
 		require.Equal(t, test.expected, result.Output)
 	}
 }
+
+func TestParseStructSequence(t *testing.T) {
+	code := `struct AB {
+	  sequence<octet> payload;
+	}`
+	result := Parse(code)
+	require.Nil(t, result.Err)
+}
