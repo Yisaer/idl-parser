@@ -33,19 +33,19 @@ package main
 
 import (
 	"fmt"
-	"github.com/Yisaer/idlparser"
+	
+	"github.com/Yisaer/idlparser/ast"
 )
 
 func main() {
-	input := `
-	module example {
+	input := `module example {
 		struct Point {
 			long x;
 			long y;
 		};
 	}`
 
-	result := idlparser.Parse(input)
+	result := ast.Parse(input)
 	fmt.Printf("Parsed module: %+v\n", result.Output)
 }
 ```
