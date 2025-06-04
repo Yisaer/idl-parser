@@ -18,6 +18,7 @@ func TestAnnotation(t *testing.T) {
 		{"@format(a = b)", Annotation{Name: "format", Values: map[string]string{"a": "b"}}},
 		{"@format(a = b, c = d)", Annotation{Name: "format", Values: map[string]string{"a": "b", "c": "d"}}},
 		{`@format(a = "b", c = "d")`, Annotation{Name: "format", Values: map[string]string{"a": "b", "c": "d"}}},
+		{`@format(a = "b", c = 123)`, Annotation{Name: "format", Values: map[string]string{"a": "b", "c": "123"}}},
 	}
 
 	for _, test := range tests {

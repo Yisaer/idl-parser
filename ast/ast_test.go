@@ -153,6 +153,14 @@ func TestModuleJson(t *testing.T) {
 					}`,
 			expected: `{"name":"spi","content":[{"name":"idbits","fields":[{"type":{"width":4,"self_type":"bitfield"},"name":"bid"}]},{"name":"CANFrame","fields":[{"annotations":[{"name":"format"}],"type":{"self_type":"octet"},"name":"header"},{"annotations":[{"name":"format","values":{"a":"b"}}],"type":{"self_type":"idbits","name":"idbits"},"name":"id"}]}]}`,
 		},
+		{
+			input: `module spi {
+						struct CANFrame {
+							@format(a="b",c=123) octet header;
+						};
+					}`,
+			expected: `{"name":"spi","content":[{"name":"CANFrame","fields":[{"annotations":[{"name":"format","values":{"a":"b","c":"123"}}],"type":{"self_type":"octet"},"name":"header"}]}]}`,
+		},
 	}
 	for _, test := range tests {
 		result := Parse(test.input)

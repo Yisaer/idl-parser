@@ -17,8 +17,8 @@ func parseQuotedString(code string) gomme.Result[string, string] {
 		gomme.Token[string](`"`),
 		gomme.Recognize(
 			gomme.Pair(
-				gomme.Alpha1[string](),
 				gomme.Alphanumeric0[string](),
+				gomme.Alpha0[string](),
 			)),
 		gomme.Token[string](`"`),
 	)(code)
@@ -37,7 +37,7 @@ func parseKVPairs(code string) gomme.Result[map[string]string, string] {
 				parseQuotedString,
 				gomme.Recognize(
 					gomme.Pair(
-						gomme.Alpha1[string](),
+						gomme.Alpha0[string](),
 						gomme.Alphanumeric0[string](),
 					))),
 		),
