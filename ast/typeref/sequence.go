@@ -20,10 +20,10 @@ func (s Sequence) TypeName() string {
 }
 
 func ParseSequence(code string) gomme.Result[Sequence, string] {
-	return gomme.Map(
+	result := gomme.Map(
 		gomme.Preceded(
 			gomme.Token[string]("sequence"),
-			utils.InEmpty(gomme.Delimited(
+			utils.InLeftEmpty(gomme.Delimited(
 				gomme.Token[string]("<"),
 				utils.InEmpty(ParseTypeRef),
 				gomme.Token[string](">"),
@@ -32,4 +32,5 @@ func ParseSequence(code string) gomme.Result[Sequence, string] {
 			return Sequence{InnerType: innerType}, nil
 		},
 	)(code)
+	return result
 }
