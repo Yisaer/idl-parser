@@ -1,4 +1,4 @@
-# idlparser
+# idl-parser
 
 OMG IDL Parser written in go inspired by [gomme](https://github.com/oleiade/gomme)
 
