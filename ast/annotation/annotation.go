@@ -1,6 +1,9 @@
 package annotation
 
 import (
+	"unicode"
+	"unicode/utf8"
+
 	"github.com/oleiade/gomme"
 
 	"github.com/yisaer/idl-parser/ast/utils"
@@ -12,14 +15,27 @@ type Annotation struct {
 	Values map[string]string `json:"values,omitempty"`
 }
 
+func parseValidChar(code string) gomme.Result[string, string] {
+	var matched string
+	remaining := code
+	for len(remaining) > 0 {
+		r, size := utf8.DecodeRuneInString(remaining)
+		if !(unicode.IsLetter(r) || unicode.IsDigit(r) || r == '.') {
+			break
+		}
+		matched += string(r)
+		remaining = remaining[size:]
+	}
+	if len(matched) == 0 && len(code) > 0 {
+		return gomme.Failure[string, string](gomme.NewError[string](code, "expect rune"), code)
+	}
+	return gomme.Success[string, string](matched, remaining)
+}
+
 func parseQuotedString(code string) gomme.Result[string, string] {
 	return gomme.Delimited(
 		gomme.Token[string](`"`),
-		gomme.Recognize(
-			gomme.Pair(
-				gomme.Alphanumeric0[string](),
-				gomme.Alpha0[string](),
-			)),
+		parseValidChar,
 		gomme.Token[string](`"`),
 	)(code)
 }
@@ -35,11 +51,8 @@ func parseKVPairs(code string) gomme.Result[map[string]string, string] {
 			utils.InEmpty(gomme.Token[string]("=")),
 			gomme.Alternative(
 				parseQuotedString,
-				gomme.Recognize(
-					gomme.Pair(
-						gomme.Alpha0[string](),
-						gomme.Alphanumeric0[string](),
-					))),
+				parseValidChar,
+			),
 		),
 		utils.InEmpty(gomme.Token[string](",")),
 	),
