@@ -20,7 +20,7 @@ func parseValidChar(code string) gomme.Result[string, string] {
 	remaining := code
 	for len(remaining) > 0 {
 		r, size := utf8.DecodeRuneInString(remaining)
-		if !(unicode.IsLetter(r) || unicode.IsDigit(r) || r == '.') {
+		if !(unicode.IsLetter(r) || unicode.IsDigit(r) || r == '.' || r == '/') {
 			break
 		}
 		matched += string(r)
