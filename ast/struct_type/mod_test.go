@@ -55,6 +55,7 @@ func TestStructFieldAnnotations(t *testing.T) {
 						long h2;
 					}`,
 			expected: Struct{
+				Type: "Struct",
 				Name: "AB",
 				Fields: []Field{
 					{
@@ -74,6 +75,7 @@ func TestStructFieldAnnotations(t *testing.T) {
 						@format octet header;
 					}`,
 			expected: Struct{
+				Type: "Struct",
 				Name: "AB",
 				Fields: []Field{
 					{

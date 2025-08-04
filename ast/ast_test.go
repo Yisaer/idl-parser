@@ -66,9 +66,11 @@ func TestParseModule(t *testing.T) {
 						};
 					}`,
 			expected: Module{
+				Type: "Module",
 				Name: "spi",
 				Content: []ModuleContent{
 					bitset.BitSet{
+						Type: "BitSet",
 						Name: "idbits",
 						Fields: []bitset.Field{
 							{
@@ -78,6 +80,7 @@ func TestParseModule(t *testing.T) {
 						},
 					},
 					struct_type.Struct{
+						Type: "Struct",
 						Name: "CANFrame",
 						Fields: []struct_type.Field{
 							{
@@ -139,7 +142,7 @@ func TestModuleJson(t *testing.T) {
 							@format (type=binpack) @merge sequence<SPI> packs;
 						};
           			}`,
-			expected: `{"name":"spi","content":[{"name":"IdBits","fields":[{"type":{"width":4,"self_type":"bitfield"},"name":"bid"},{"type":{"width":12,"self_type":"bitfield"},"name":"cid"}]},{"name":"LBits","fields":[{"type":{"width":1,"self_type":"bitfield"},"name":"isUpdate"},{"type":{"width":7,"self_type":"bitfield"},"name":"plen"}]},{"name":"CANFrame","fields":[{"type":{"self_type":"octet"},"name":"header"},{"type":{"self_type":"IdBits","name":"IdBits"},"name":"id"},{"type":{"self_type":"LBits","name":"LBits"},"name":"l"},{"type":{"self_type":"sequence","inner_type":{"self_type":"octet"}},"name":"payload"}]},{"name":"SPI","fields":[{"type":{"self_type":"unsigned short"},"name":"header"},{"type":{"self_type":"unsigned short"},"name":"plen"},{"type":{"self_type":"octet"},"name":"counter"},{"type":{"self_type":"octet"},"name":"crc"},{"annotations":[{"name":"format","values":{"dbc":"ab","type":"canpack"}},{"name":"merge"}],"type":{"self_type":"sequence","inner_type":{"self_type":"CANFrame","name":"CANFrame"}},"name":"messages"}]},{"name":"parquet","fields":[{"type":{"self_type":"unsigned long long"},"name":"timestamp"},{"annotations":[{"name":"format","values":{"type":"binpack"}},{"name":"merge"}],"type":{"self_type":"sequence","inner_type":{"self_type":"SPI","name":"SPI"}},"name":"packs"}]}]}`,
+			expected: `{"name":"spi","content":[{"name":"IdBits","fields":[{"type":{"width":4,"self_type":"bitfield"},"name":"bid"},{"type":{"width":12,"self_type":"bitfield"},"name":"cid"}],"type":"BitSet"},{"name":"LBits","fields":[{"type":{"width":1,"self_type":"bitfield"},"name":"isUpdate"},{"type":{"width":7,"self_type":"bitfield"},"name":"plen"}],"type":"BitSet"},{"name":"CANFrame","fields":[{"type":{"self_type":"octet"},"name":"header"},{"type":{"self_type":"IdBits","name":"IdBits"},"name":"id"},{"type":{"self_type":"LBits","name":"LBits"},"name":"l"},{"type":{"self_type":"sequence","inner_type":{"self_type":"octet"}},"name":"payload"}],"type":"Struct"},{"name":"SPI","fields":[{"type":{"self_type":"unsigned short"},"name":"header"},{"type":{"self_type":"unsigned short"},"name":"plen"},{"type":{"self_type":"octet"},"name":"counter"},{"type":{"self_type":"octet"},"name":"crc"},{"annotations":[{"name":"format","values":{"dbc":"ab","type":"canpack"}},{"name":"merge"}],"type":{"self_type":"sequence","inner_type":{"self_type":"CANFrame","name":"CANFrame"}},"name":"messages"}],"type":"Struct"},{"name":"parquet","fields":[{"type":{"self_type":"unsigned long long"},"name":"timestamp"},{"annotations":[{"name":"format","values":{"type":"binpack"}},{"name":"merge"}],"type":{"self_type":"sequence","inner_type":{"self_type":"SPI","name":"SPI"}},"name":"packs"}],"type":"Struct"}],"type":"Module"}`,
 		},
 		{
 			input: `module spi {
@@ -151,7 +154,7 @@ func TestModuleJson(t *testing.T) {
 							@format(a=b) idbits id;
 						};
 					}`,
-			expected: `{"name":"spi","content":[{"name":"idbits","fields":[{"type":{"width":4,"self_type":"bitfield"},"name":"bid"}]},{"name":"CANFrame","fields":[{"annotations":[{"name":"format"}],"type":{"self_type":"octet"},"name":"header"},{"annotations":[{"name":"format","values":{"a":"b"}}],"type":{"self_type":"idbits","name":"idbits"},"name":"id"}]}]}`,
+			expected: `{"name":"spi","content":[{"name":"idbits","fields":[{"type":{"width":4,"self_type":"bitfield"},"name":"bid"}],"type":"BitSet"},{"name":"CANFrame","fields":[{"annotations":[{"name":"format"}],"type":{"self_type":"octet"},"name":"header"},{"annotations":[{"name":"format","values":{"a":"b"}}],"type":{"self_type":"idbits","name":"idbits"},"name":"id"}],"type":"Struct"}],"type":"Module"}`,
 		},
 		{
 			input: `module spi {
@@ -159,7 +162,41 @@ func TestModuleJson(t *testing.T) {
 							@format(a="b",c=123) octet header;
 						};
 					}`,
-			expected: `{"name":"spi","content":[{"name":"CANFrame","fields":[{"annotations":[{"name":"format","values":{"a":"b","c":"123"}}],"type":{"self_type":"octet"},"name":"header"}]}]}`,
+			expected: `{"name":"spi","content":[{"name":"CANFrame","fields":[{"annotations":[{"name":"format","values":{"a":"b","c":"123"}}],"type":{"self_type":"octet"},"name":"header"}],"type":"Struct"}],"type":"Module"}`,
+		},
+	}
+	for _, test := range tests {
+		result := Parse(test.input)
+		require.Nil(t, result.Err)
+		v, err := json.Marshal(result.Output)
+		require.NoError(t, err)
+		//fmt.Println(string(v))
+		require.Equal(t, test.expected, string(v))
+	}
+}
+
+func TestNestedModuleJson(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{
+			input: `
+module outer {
+    module inner1 {
+        struct a {
+            octet id1;
+            octet id2;
+        };
+    };
+    module inner2 {
+        struct b {
+            octet id3;
+            octet id4;
+        };
+    };
+}`,
+			expected: `{"name":"outer","content":[{"name":"inner1","content":[{"name":"a","fields":[{"type":{"self_type":"octet"},"name":"id1"},{"type":{"self_type":"octet"},"name":"id2"}],"type":"Struct"}],"type":"Module"},{"name":"inner2","content":[{"name":"b","fields":[{"type":{"self_type":"octet"},"name":"id3"},{"type":{"self_type":"octet"},"name":"id4"}],"type":"Struct"}],"type":"Module"}],"type":"Module"}`,
 		},
 	}
 	for _, test := range tests {

@@ -18,6 +18,7 @@ type Field struct {
 type Struct struct {
 	Name   string  `json:"name"`
 	Fields []Field `json:"fields"`
+	Type   string  `json:"type"`
 }
 
 func (Struct) ModuleContentType() typ.ModuleContentType {
@@ -81,6 +82,7 @@ func Parse(code string) gomme.Result[Struct, string] {
 		Struct{
 			Name:   nameResult.Output,
 			Fields: fieldsResult.Output,
+			Type:   typ.ModuleContentTypeToString(typ.StructType),
 		},
 		fieldsResult.Remaining,
 	)
