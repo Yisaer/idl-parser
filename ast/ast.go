@@ -16,6 +16,11 @@ type ModuleContent interface {
 type Module struct {
 	Name    string          `json:"name"`
 	Content []ModuleContent `json:"content"`
+	Type    string          `json:"type"`
+}
+
+func (Module) ModuleContentType() typ.ModuleContentType {
+	return typ.ModuleType
 }
 
 func Parse(code string) gomme.Result[Module, string] {
@@ -36,6 +41,7 @@ func Parse(code string) gomme.Result[Module, string] {
 			gomme.Terminated(gomme.Alternative(
 				gomme.Map(bitset.Parse, func(output bitset.BitSet) (ModuleContent, error) { return output, nil }),
 				gomme.Map(struct_type.Parse, func(output struct_type.Struct) (ModuleContent, error) { return output, nil }),
+				gomme.Map(Parse, func(output Module) (ModuleContent, error) { return output, nil }),
 			),
 				gomme.Optional(utils.InEmpty(gomme.Token[string](";"))),
 			),
@@ -48,5 +54,6 @@ func Parse(code string) gomme.Result[Module, string] {
 	return gomme.Success(Module{
 		Name:    nameResult.Output,
 		Content: contentResult.Output,
+		Type:    typ.ModuleContentTypeToString(typ.ModuleType),
 	}, contentResult.Remaining)
 }

@@ -16,6 +16,7 @@ type Field struct {
 type BitSet struct {
 	Name   string  `json:"name"`
 	Fields []Field `json:"fields"`
+	Type   string  `json:"type"`
 }
 
 func (BitSet) ModuleContentType() typ.ModuleContentType {
@@ -69,6 +70,7 @@ func Parse(code string) gomme.Result[BitSet, string] {
 		BitSet{
 			Name:   nameResult.Output,
 			Fields: fieldsResult.Output,
+			Type:   typ.ModuleContentTypeToString(typ.BitSetType),
 		},
 		fieldsResult.Remaining,
 	)
