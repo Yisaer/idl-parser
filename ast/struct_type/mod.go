@@ -21,6 +21,10 @@ type Struct struct {
 	Type   string  `json:"type"`
 }
 
+func (s Struct) GetName() string {
+	return s.Name
+}
+
 func (Struct) ModuleContentType() typ.ModuleContentType {
 	return typ.StructType
 }

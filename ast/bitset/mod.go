@@ -23,6 +23,10 @@ func (BitSet) ModuleContentType() typ.ModuleContentType {
 	return typ.BitSetType
 }
 
+func (b BitSet) GetName() string {
+	return b.Name
+}
+
 func parseField(code string) gomme.Result[Field, string] {
 	var bitFieldParser gomme.Parser[string, typeref.BitFieldType] = typeref.ParseBitField
 	return gomme.Map(
