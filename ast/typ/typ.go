@@ -34,4 +34,5 @@ const (
 	SelfDefinedTypeType
 	SequenceType
 	BooleanType
+	FloatType
 )
