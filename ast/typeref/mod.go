@@ -21,6 +21,7 @@ func ParseTypeRef(code string) gomme.Result[TypeRef, string] {
 		gomme.Map(ParseLong, func(long LongType) (TypeRef, error) { return long, nil }),
 		gomme.Map(ParseUnsignedLongLong, func(ull UnsignedLongLongType) (TypeRef, error) { return ull, nil }),
 		gomme.Map(ParseUnsignedLong, func(ul UnsignedLongType) (TypeRef, error) { return ul, nil }),
+		gomme.Map(ParseBoolean, func(b BooleanType) (TypeRef, error) { return b, nil }),
 		gomme.Map(ParseBitField, func(bitfield BitFieldType) (TypeRef, error) { return bitfield, nil }),
 		gomme.Map(ParseTypeName, func(name TypeName) (TypeRef, error) { return name, nil }),
 	)(code)

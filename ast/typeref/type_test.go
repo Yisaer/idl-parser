@@ -111,3 +111,17 @@ func TestUnsignedLongLong(t *testing.T) {
 		require.Equal(t, test.expected, result.Output)
 	}
 }
+
+func TestBoolean(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected TypeRef
+	}{
+		{"boolean", BooleanType{SelfType: "boolean"}},
+	}
+
+	for _, test := range tests {
+		result := ParseBoolean(test.input)
+		require.Equal(t, test.expected, result.Output)
+	}
+}

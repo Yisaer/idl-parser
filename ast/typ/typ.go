@@ -33,4 +33,5 @@ const (
 	UnsignedLongLongType
 	SelfDefinedTypeType
 	SequenceType
+	BooleanType
 )
