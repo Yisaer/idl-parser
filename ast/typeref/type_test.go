@@ -125,3 +125,17 @@ func TestBoolean(t *testing.T) {
 		require.Equal(t, test.expected, result.Output)
 	}
 }
+
+func TestFloat(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected TypeRef
+	}{
+		{"float", FloatType{SelfType: "float"}},
+	}
+
+	for _, test := range tests {
+		result := ParseFloat(test.input)
+		require.Equal(t, test.expected, result.Output)
+	}
+}
