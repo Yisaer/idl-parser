@@ -24,7 +24,18 @@ type IDLConverter struct {
 	belongModule ast.Module
 }
 
-func (c *IDLConverter) Init() error {
+func NewIDLConverter(schemaID string, schemaPath string) (*IDLConverter, error) {
+	c := &IDLConverter{
+		SchemaID:   schemaID,
+		SchemaPath: schemaPath,
+	}
+	if err := c.init(); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+func (c *IDLConverter) init() error {
 	v, err := os.ReadFile(c.SchemaPath)
 	if err != nil {
 		return err
@@ -47,32 +58,19 @@ func (c *IDLConverter) Init() error {
 	return nil
 }
 
-func (c *IDLConverter) verifyModuleSeq() error {
-	for _, con := range c.Module.Content {
-		st, ok := con.(struct_type.Struct)
-		if !ok {
-			continue
-		}
-		for index, field := range st.Fields {
-			if field.Type.TypeRefType() == typ.SequenceType {
-				if index == 0 {
-					return fmt.Errorf("len should defined before sequence filed:%v in struct:%v", field.Name, st.Name)
-				}
-				if st.Fields[index-1].Name != "len" {
-					return fmt.Errorf("len should defined before sequence filed:%v in struct:%v", field.Name, st.Name)
-				}
-			}
-		}
-	}
-	return nil
-}
-
 func (c *IDLConverter) travelModule() error {
-	nodes := strings.Split(c.SchemaPath, ".")
+	nodes := strings.Split(c.SchemaID, ".")
 	for _, node := range nodes {
-		c.list.PushFront(node)
+		c.list.PushBack(node)
 	}
-	return c.travel(c.list.Front(), c.Module)
+	mockRootModule := ast.Module{
+		Name: "header",
+		Content: []ast.ModuleContent{
+			c.Module,
+		},
+		Type: "module",
+	}
+	return c.travel(c.list.Front(), mockRootModule)
 }
 
 func (c *IDLConverter) travel(curr *list.Element, currModule ast.Module) error {

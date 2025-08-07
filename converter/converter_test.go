@@ -11,6 +11,15 @@ import (
 	"github.com/yisaer/idl-parser/ast/typeref"
 )
 
+func TestConverterDecode(t *testing.T) {
+	c, err := NewIDLConverter("a.b.c", "./testdata/test.idl")
+	require.NoError(t, err)
+	testdata := []byte{41, 42}
+	m, err := c.Decode(testdata)
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}{"id1": int64(41), "id2": int64(42)}, m)
+}
+
 func TestParseDataByType_Octet(t *testing.T) {
 	tests := []struct {
 		name           string
