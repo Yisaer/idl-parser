@@ -35,4 +35,5 @@ const (
 	SequenceType
 	BooleanType
 	FloatType
+	StringType
 )

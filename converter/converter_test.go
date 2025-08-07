@@ -653,3 +653,150 @@ func TestParseDataByType_SequenceOfBoolean(t *testing.T) {
 		})
 	}
 }
+
+func TestParseDataByType_String(t *testing.T) {
+	tests := []struct {
+		name           string
+		data           []byte
+		expected       string
+		expectedRemain []byte
+		expectError    bool
+	}{
+		{
+			name:           "parse string 'hello' successfully",
+			data:           []byte{0, 0, 0, 5, 'h', 'e', 'l', 'l', 'o', 1, 2, 3},
+			expected:       "hello",
+			expectedRemain: []byte{1, 2, 3},
+			expectError:    false,
+		},
+		{
+			name:           "parse empty string successfully",
+			data:           []byte{0, 0, 0, 0, 100, 200},
+			expected:       "",
+			expectedRemain: []byte{100, 200},
+			expectError:    false,
+		},
+		{
+			name:           "parse string with special characters successfully",
+			data:           []byte{0, 0, 0, 3, 'a', 'b', 'c', 10, 20},
+			expected:       "abc",
+			expectedRemain: []byte{10, 20},
+			expectError:    false,
+		},
+		{
+			name:           "parse string with unicode characters successfully",
+			data:           []byte{0, 0, 0, 6, 0xE4, 0xB8, 0xAD, 0xE6, 0x96, 0x87, 100, 200},
+			expected:       "中文",
+			expectedRemain: []byte{100, 200},
+			expectError:    false,
+		},
+		{
+			name:           "should return error when insufficient data for string length",
+			data:           []byte{0, 0, 0},
+			expected:       "",
+			expectedRemain: nil,
+			expectError:    true,
+		},
+		{
+			name:           "should return error when string length correct but data insufficient",
+			data:           []byte{0, 0, 0, 5, 'h', 'e', 'l'},
+			expected:       "",
+			expectedRemain: nil,
+			expectError:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stringType := typeref.NewStringType()
+			result, remain, err := parseDataByType(tt.data, stringType)
+
+			if tt.expectError {
+				require.Error(t, err)
+				require.Nil(t, remain)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.expected, result)
+				require.Equal(t, tt.expectedRemain, remain)
+			}
+		})
+	}
+}
+
+func TestParseDataByType_SequenceOfString(t *testing.T) {
+	tests := []struct {
+		name           string
+		data           []byte
+		expected       []interface{}
+		expectedRemain []byte
+		expectError    bool
+	}{
+		{
+			name:           "parse sequence with 2 string elements",
+			data:           []byte{0, 0, 0, 2, 0, 0, 0, 3, 'a', 'b', 'c', 0, 0, 0, 2, 'x', 'y', 100, 200},
+			expected:       []interface{}{"abc", "xy"},
+			expectedRemain: []byte{100, 200},
+			expectError:    false,
+		},
+		{
+			name:           "parse sequence with 0 string elements",
+			data:           []byte{0, 0, 0, 0, 100, 200},
+			expected:       []interface{}{},
+			expectedRemain: []byte{100, 200},
+			expectError:    false,
+		},
+		{
+			name:           "parse sequence with 1 string element",
+			data:           []byte{0, 0, 0, 1, 0, 0, 0, 4, 't', 'e', 's', 't', 100, 200},
+			expected:       []interface{}{"test"},
+			expectedRemain: []byte{100, 200},
+			expectError:    false,
+		},
+		{
+			name:           "parse sequence with empty strings",
+			data:           []byte{0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 100, 200},
+			expected:       []interface{}{"", ""},
+			expectedRemain: []byte{100, 200},
+			expectError:    false,
+		},
+		{
+			name:           "should return error when insufficient data for sequence length",
+			data:           []byte{0, 0, 0},
+			expected:       nil,
+			expectedRemain: nil,
+			expectError:    true,
+		},
+		{
+			name:           "should return error when sequence length correct but first string data insufficient",
+			data:           []byte{0, 0, 0, 1, 0, 0, 0, 5, 'h', 'e'},
+			expected:       nil,
+			expectedRemain: nil,
+			expectError:    true,
+		},
+		{
+			name:           "should return error when first string length correct but data insufficient",
+			data:           []byte{0, 0, 0, 1, 0, 0, 0, 3},
+			expected:       nil,
+			expectedRemain: nil,
+			expectError:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stringType := typeref.NewStringType()
+			sequenceType := typeref.NewSequence(stringType)
+
+			result, remain, err := parseDataByType(tt.data, sequenceType)
+
+			if tt.expectError {
+				require.Error(t, err)
+				require.Nil(t, remain)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.expected, result)
+				require.Equal(t, tt.expectedRemain, remain)
+			}
+		})
+	}
+}
