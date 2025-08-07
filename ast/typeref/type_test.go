@@ -145,7 +145,7 @@ func TestString(t *testing.T) {
 		input    string
 		expected TypeRef
 	}{
-		{"string", FloatType{SelfType: "string"}},
+		{"string", StringType{SelfType: "string"}},
 	}
 
 	for _, test := range tests {
