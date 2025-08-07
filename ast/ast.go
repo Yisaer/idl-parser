@@ -10,6 +10,7 @@ import (
 )
 
 type ModuleContent interface {
+	GetName() string
 	ModuleContentType() typ.ModuleContentType
 }
 
@@ -17,6 +18,10 @@ type Module struct {
 	Name    string          `json:"name"`
 	Content []ModuleContent `json:"content"`
 	Type    string          `json:"type"`
+}
+
+func (m Module) GetName() string {
+	return m.Name
 }
 
 func (Module) ModuleContentType() typ.ModuleContentType {
