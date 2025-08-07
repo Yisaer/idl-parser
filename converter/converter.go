@@ -16,14 +16,26 @@ import (
 )
 
 type IDLConverter struct {
-	SchemaID   string
-	SchemaPath string
-	Module     ast.Module
-	list       *list.List
-	tarStruct  struct_type.Struct
+	SchemaID     string
+	SchemaPath   string
+	Module       ast.Module
+	list         *list.List
+	tarStruct    struct_type.Struct
+	belongModule ast.Module
 }
 
-func (c *IDLConverter) Init() error {
+func NewIDLConverter(schemaID string, schemaPath string) (*IDLConverter, error) {
+	c := &IDLConverter{
+		SchemaID:   schemaID,
+		SchemaPath: schemaPath,
+	}
+	if err := c.init(); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+func (c *IDLConverter) init() error {
 	v, err := os.ReadFile(c.SchemaPath)
 	if err != nil {
 		return err
@@ -46,32 +58,19 @@ func (c *IDLConverter) Init() error {
 	return nil
 }
 
-func (c *IDLConverter) verifyModuleSeq() error {
-	for _, con := range c.Module.Content {
-		st, ok := con.(struct_type.Struct)
-		if !ok {
-			continue
-		}
-		for index, field := range st.Fields {
-			if field.Type.TypeRefType() == typ.SequenceType {
-				if index == 0 {
-					return fmt.Errorf("len should defined before sequence filed:%v in struct:%v", field.Name, st.Name)
-				}
-				if st.Fields[index-1].Name != "len" {
-					return fmt.Errorf("len should defined before sequence filed:%v in struct:%v", field.Name, st.Name)
-				}
-			}
-		}
-	}
-	return nil
-}
-
 func (c *IDLConverter) travelModule() error {
-	nodes := strings.Split(c.SchemaPath, ".")
+	nodes := strings.Split(c.SchemaID, ".")
 	for _, node := range nodes {
-		c.list.PushFront(node)
+		c.list.PushBack(node)
 	}
-	return c.travel(c.list.Front(), c.Module)
+	mockRootModule := ast.Module{
+		Name: "header",
+		Content: []ast.ModuleContent{
+			c.Module,
+		},
+		Type: "module",
+	}
+	return c.travel(c.list.Front(), mockRootModule)
 }
 
 func (c *IDLConverter) travel(curr *list.Element, currModule ast.Module) error {
@@ -84,6 +83,7 @@ func (c *IDLConverter) travel(curr *list.Element, currModule ast.Module) error {
 					return fmt.Errorf("travel node %v not struct", node)
 				}
 				c.tarStruct = st
+				c.belongModule = currModule
 				return nil
 			}
 		}
@@ -176,22 +176,11 @@ func isSupportedTyp(tar typ.FieldRefType) bool {
 }
 
 func (c *IDLConverter) Decode(data []byte) (map[string]interface{}, error) {
-	m := make(map[string]any, len(c.tarStruct.Fields))
-	var v interface{}
-	var err error
-	var remained []byte
-	remained = data
-	for _, field := range c.tarStruct.Fields {
-		v, remained, err = parseDataByType(remained, field.Type)
-		if err != nil {
-			return nil, fmt.Errorf("struct %v parse field %v error:%v", c.tarStruct.Name, field.Name, err.Error())
-		}
-		m[field.Name] = v
-	}
-	return m, nil
+	v, _, err := parseBytesToStruct(data, c.tarStruct, c.belongModule)
+	return v, err
 }
 
-func parseDataByType(data []byte, t typeref.TypeRef) (interface{}, []byte, error) {
+func parseDataByType(data []byte, t typeref.TypeRef, module ast.Module) (interface{}, []byte, error) {
 	switch t.TypeRefType() {
 	case typ.OctetType:
 		return parseBytesToInt64(data, 1)
@@ -213,12 +202,35 @@ func parseDataByType(data []byte, t typeref.TypeRef) (interface{}, []byte, error
 		return parseBytesToFloat64(data, 4)
 	case typ.SequenceType:
 		seq := t.(typeref.Sequence)
-		return parseBytesToList(data, seq)
+		return parseBytesToList(data, seq, module)
 	case typ.StringType:
 		return parseBytesToString(data)
-
+	case typ.SelfDefinedTypeType:
+		definedType := t.(typeref.TypeName)
+		for _, c := range module.Content {
+			if c.GetName() == definedType.Name && c.ModuleContentType() == typ.StructType {
+				st := c.(struct_type.Struct)
+				return parseBytesToStruct(data, st, module)
+			}
+		}
 	}
 	return nil, nil, fmt.Errorf("unsupported type:%v", t.TypeName())
+}
+
+func parseBytesToStruct(data []byte, st struct_type.Struct, module ast.Module) (map[string]interface{}, []byte, error) {
+	var v interface{}
+	var err error
+	var remained []byte
+	remained = data
+	m := make(map[string]any, len(st.Fields))
+	for _, field := range st.Fields {
+		v, remained, err = parseDataByType(remained, field.Type, module)
+		if err != nil {
+			return nil, nil, fmt.Errorf("struct %v parse field %v error:%v", st, field.Name, err.Error())
+		}
+		m[field.Name] = v
+	}
+	return m, remained, nil
 }
 
 func parseBytesToString(data []byte) (value string, remained []byte, err error) {
@@ -329,7 +341,7 @@ func parseBytesToFloat64(data []byte, expLen int) (float64, []byte, error) {
 	return 0, nil, fmt.Errorf("expect data len 4/8 got len %v", len(data))
 }
 
-func parseBytesToList(data []byte, seqType typeref.Sequence) ([]interface{}, []byte, error) {
+func parseBytesToList(data []byte, seqType typeref.Sequence, module ast.Module) ([]interface{}, []byte, error) {
 	if len(data) <= 4 {
 		return nil, nil, fmt.Errorf("expect data len larger than %v got len %v", 4, len(data))
 	}
@@ -340,7 +352,7 @@ func parseBytesToList(data []byte, seqType typeref.Sequence) ([]interface{}, []b
 	result := make([]interface{}, 0, sequenceLen)
 	var v interface{}
 	for i := 0; i < int(sequenceLen); i++ {
-		v, remained, err = parseDataByType(remained, seqType.InnerType)
+		v, remained, err = parseDataByType(remained, seqType.InnerType, module)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parse sequence %v error:%v", seqType.InnerType, err.Error())
 		}

@@ -6,9 +6,19 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/yisaer/idl-parser/ast"
 	"github.com/yisaer/idl-parser/ast/typ"
 	"github.com/yisaer/idl-parser/ast/typeref"
 )
+
+func TestConverterDecode(t *testing.T) {
+	c, err := NewIDLConverter("a.b.c", "./testdata/test.idl")
+	require.NoError(t, err)
+	testdata := []byte{41, 42}
+	m, err := c.Decode(testdata)
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}{"id1": int64(41), "id2": int64(42)}, m)
+}
 
 func TestParseDataByType_Octet(t *testing.T) {
 	tests := []struct {
@@ -47,11 +57,10 @@ func TestParseDataByType_Octet(t *testing.T) {
 			expectError:    true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			octetType := typeref.NewOctetType()
-			result, remain, err := parseDataByType(tt.data, octetType)
+			result, remain, err := parseDataByType(tt.data, octetType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -115,7 +124,7 @@ func TestParseDataByType_SequenceOfOctet(t *testing.T) {
 			octetType := typeref.NewOctetType()
 			sequenceType := typeref.NewSequence(octetType)
 
-			result, remain, err := parseDataByType(tt.data, sequenceType)
+			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -132,7 +141,7 @@ func TestParseDataByType_SequenceOfOctet(t *testing.T) {
 func TestParseDataByType_UnsupportedType(t *testing.T) {
 	mockType := &mockUnsupportedType{}
 
-	result, remain, err := parseDataByType([]byte{1, 2, 3}, mockType)
+	result, remain, err := parseDataByType([]byte{1, 2, 3}, mockType, ast.Module{})
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unsupported type")
@@ -190,7 +199,7 @@ func TestParseDataByType_Short(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			shortType := typeref.NewShortType()
-			result, remain, err := parseDataByType(tt.data, shortType)
+			result, remain, err := parseDataByType(tt.data, shortType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -238,7 +247,7 @@ func TestParseDataByType_UnsignedShort(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			unsignedShortType := typeref.NewUnsignedShortType()
-			result, remain, err := parseDataByType(tt.data, unsignedShortType)
+			result, remain, err := parseDataByType(tt.data, unsignedShortType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -286,7 +295,7 @@ func TestParseDataByType_Long(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			longType := typeref.NewLongType()
-			result, remain, err := parseDataByType(tt.data, longType)
+			result, remain, err := parseDataByType(tt.data, longType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -334,7 +343,7 @@ func TestParseDataByType_UnsignedLong(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			unsignedLongType := typeref.NewUnsignedLong()
-			result, remain, err := parseDataByType(tt.data, unsignedLongType)
+			result, remain, err := parseDataByType(tt.data, unsignedLongType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -382,7 +391,7 @@ func TestParseDataByType_LongLong(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			longLongType := typeref.NewLongLongType()
-			result, remain, err := parseDataByType(tt.data, longLongType)
+			result, remain, err := parseDataByType(tt.data, longLongType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -430,7 +439,7 @@ func TestParseDataByType_UnsignedLongLong(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			unsignedLongLongType := typeref.NewUnsignedLongLong()
-			result, remain, err := parseDataByType(tt.data, unsignedLongLongType)
+			result, remain, err := parseDataByType(tt.data, unsignedLongLongType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -485,7 +494,7 @@ func TestParseDataByType_Boolean(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			booleanType := typeref.NewBooleanType()
-			result, remain, err := parseDataByType(tt.data, booleanType)
+			result, remain, err := parseDataByType(tt.data, booleanType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -540,7 +549,7 @@ func TestParseDataByType_Float(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			floatType := typeref.NewFloatType()
-			result, remain, err := parseDataByType(tt.data, floatType)
+			result, remain, err := parseDataByType(tt.data, floatType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -590,7 +599,7 @@ func TestParseDataByType_SequenceOfShort(t *testing.T) {
 			shortType := typeref.NewShortType()
 			sequenceType := typeref.NewSequence(shortType)
 
-			result, remain, err := parseDataByType(tt.data, sequenceType)
+			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -640,7 +649,7 @@ func TestParseDataByType_SequenceOfBoolean(t *testing.T) {
 			booleanType := typeref.NewBooleanType()
 			sequenceType := typeref.NewSequence(booleanType)
 
-			result, remain, err := parseDataByType(tt.data, sequenceType)
+			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -709,7 +718,7 @@ func TestParseDataByType_String(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			stringType := typeref.NewStringType()
-			result, remain, err := parseDataByType(tt.data, stringType)
+			result, remain, err := parseDataByType(tt.data, stringType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -787,7 +796,7 @@ func TestParseDataByType_SequenceOfString(t *testing.T) {
 			stringType := typeref.NewStringType()
 			sequenceType := typeref.NewSequence(stringType)
 
-			result, remain, err := parseDataByType(tt.data, sequenceType)
+			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
