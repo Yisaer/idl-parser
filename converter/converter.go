@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"os"
 	"strings"
 
@@ -156,6 +157,8 @@ var (
 		typ.UnsignedLongType,
 		typ.LongLongType,
 		typ.UnsignedLongLongType,
+		typ.BooleanType,
+		typ.FloatType,
 	}
 )
 
@@ -169,17 +172,6 @@ func isSupportedTyp(tar typ.FieldRefType) bool {
 }
 
 func (c *IDLConverter) Decode(data []byte) (map[string]interface{}, error) {
-	expectLen := 0
-	for _, field := range c.tarStruct.Fields {
-		fieldLen, err := typExpectLen(field.Type.TypeRefType())
-		if err != nil {
-			return nil, fmt.Errorf("field %v has unsupported typ:%v", field.Name, err.Error())
-		}
-		expectLen += fieldLen
-	}
-	if expectLen != len(data) {
-		return nil, fmt.Errorf("expect data len %v got len %v", expectLen, len(data))
-	}
 	m := make(map[string]any, len(c.tarStruct.Fields))
 	var v interface{}
 	var err error
@@ -195,20 +187,6 @@ func (c *IDLConverter) Decode(data []byte) (map[string]interface{}, error) {
 	return m, nil
 }
 
-func typExpectLen(refType typ.FieldRefType) (int, error) {
-	switch refType {
-	case typ.OctetType:
-		return 1, nil
-	case typ.ShortType, typ.UnsignedShortType:
-		return 2, nil
-	case typ.LongType, typ.UnsignedLongType:
-		return 4, nil
-	case typ.LongLongType, typ.UnsignedLongLongType:
-		return 8, nil
-	}
-	return 0, fmt.Errorf("unsupported type:%v", refType)
-}
-
 func parseDataByType(data []byte, refType typ.FieldRefType) (interface{}, []byte, error) {
 	switch refType {
 	case typ.OctetType:
@@ -219,6 +197,10 @@ func parseDataByType(data []byte, refType typ.FieldRefType) (interface{}, []byte
 		return parseBytesToInt64(data, 4)
 	case typ.LongLongType, typ.UnsignedLongLongType:
 		return parseBytesToInt64(data, 8)
+	case typ.BooleanType:
+		return parseBytesToBoolean(data)
+	case typ.FloatType:
+		return parseBytesToFloat64(data, 4)
 	}
 	return nil, nil, fmt.Errorf("unsupported type:%v", refType)
 }
@@ -245,4 +227,29 @@ func bytesToInt64(b []byte) (int64, error) {
 	default:
 		return 0, fmt.Errorf("unexpect data len:%v", len(b))
 	}
+}
+
+func parseBytesToBoolean(data []byte) (bool, []byte, error) {
+	if len(data) < 1 {
+		return false, nil, fmt.Errorf("expect data len %v got len %v", 1, len(data))
+	}
+	return data[0] != 0x00, data[1:], nil
+}
+
+func parseBytesToFloat64(data []byte, expLen int) (float64, []byte, error) {
+	if len(data) < expLen {
+		return 0, nil, fmt.Errorf("expect data len %v got len %v", expLen, len(data))
+	}
+	if expLen == 4 {
+		parseData := data[:4]
+		remainData := data[4:]
+		value := math.Float32frombits(binary.BigEndian.Uint32(parseData))
+		return float64(value), remainData, nil
+	} else if expLen == 8 {
+		parseData := data[:8]
+		remainData := data[8:]
+		value := math.Float64frombits(binary.BigEndian.Uint64(parseData))
+		return value, remainData, nil
+	}
+	return 0, nil, fmt.Errorf("expect data len 4/8 got len %v", len(data))
 }
