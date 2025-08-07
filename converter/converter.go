@@ -4,12 +4,14 @@ import (
 	"container/list"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"os"
 	"strings"
 
 	"github.com/yisaer/idl-parser/ast"
 	"github.com/yisaer/idl-parser/ast/struct_type"
 	"github.com/yisaer/idl-parser/ast/typ"
+	"github.com/yisaer/idl-parser/ast/typeref"
 )
 
 type IDLConverter struct {
@@ -156,6 +158,9 @@ var (
 		typ.UnsignedLongType,
 		typ.LongLongType,
 		typ.UnsignedLongLongType,
+		typ.BooleanType,
+		typ.FloatType,
+		typ.SequenceType,
 	}
 )
 
@@ -169,24 +174,13 @@ func isSupportedTyp(tar typ.FieldRefType) bool {
 }
 
 func (c *IDLConverter) Decode(data []byte) (map[string]interface{}, error) {
-	expectLen := 0
-	for _, field := range c.tarStruct.Fields {
-		fieldLen, err := typExpectLen(field.Type.TypeRefType())
-		if err != nil {
-			return nil, fmt.Errorf("field %v has unsupported typ:%v", field.Name, err.Error())
-		}
-		expectLen += fieldLen
-	}
-	if expectLen != len(data) {
-		return nil, fmt.Errorf("expect data len %v got len %v", expectLen, len(data))
-	}
 	m := make(map[string]any, len(c.tarStruct.Fields))
 	var v interface{}
 	var err error
 	var remained []byte
 	remained = data
 	for _, field := range c.tarStruct.Fields {
-		v, remained, err = parseDataByType(remained, field.Type.TypeRefType())
+		v, remained, err = parseDataByType(remained, field.Type)
 		if err != nil {
 			return nil, fmt.Errorf("struct %v parse field %v error:%v", c.tarStruct.Name, field.Name, err.Error())
 		}
@@ -195,32 +189,31 @@ func (c *IDLConverter) Decode(data []byte) (map[string]interface{}, error) {
 	return m, nil
 }
 
-func typExpectLen(refType typ.FieldRefType) (int, error) {
-	switch refType {
-	case typ.OctetType:
-		return 1, nil
-	case typ.ShortType, typ.UnsignedShortType:
-		return 2, nil
-	case typ.LongType, typ.UnsignedLongType:
-		return 4, nil
-	case typ.LongLongType, typ.UnsignedLongLongType:
-		return 8, nil
-	}
-	return 0, fmt.Errorf("unsupported type:%v", refType)
-}
-
-func parseDataByType(data []byte, refType typ.FieldRefType) (interface{}, []byte, error) {
-	switch refType {
+func parseDataByType(data []byte, t typeref.TypeRef) (interface{}, []byte, error) {
+	switch t.TypeRefType() {
 	case typ.OctetType:
 		return parseBytesToInt64(data, 1)
-	case typ.ShortType, typ.UnsignedShortType:
-		return parseBytesToInt64(data, 2)
-	case typ.LongType, typ.UnsignedLongType:
-		return parseBytesToInt64(data, 4)
-	case typ.LongLongType, typ.UnsignedLongLongType:
+	case typ.ShortType:
+		return parseBytesToInt16(data)
+	case typ.UnsignedShortType:
+		return parseBytesToUint16(data)
+	case typ.LongType:
+		return parseBytesToInt32(data)
+	case typ.UnsignedLongType:
+		return parseBytesToUint32(data)
+	case typ.LongLongType:
 		return parseBytesToInt64(data, 8)
+	case typ.UnsignedLongLongType:
+		return parseBytesToUint64(data)
+	case typ.BooleanType:
+		return parseBytesToBoolean(data)
+	case typ.FloatType:
+		return parseBytesToFloat64(data, 4)
+	case typ.SequenceType:
+		seq := t.(typeref.Sequence)
+		return parseBytesToList(data, seq)
 	}
-	return nil, nil, fmt.Errorf("unsupported type:%v", refType)
+	return nil, nil, fmt.Errorf("unsupported type:%v", t.TypeName())
 }
 
 func parseBytesToInt64(data []byte, expLen int) (int64, []byte, error) {
@@ -230,6 +223,51 @@ func parseBytesToInt64(data []byte, expLen int) (int64, []byte, error) {
 	parseData, remainData := data[:expLen], data[expLen:]
 	got, err := bytesToInt64(parseData)
 	return got, remainData, err
+}
+
+func parseBytesToInt16(data []byte) (int64, []byte, error) {
+	if len(data) < 2 {
+		return 0, nil, fmt.Errorf("expect data len %v got len %v", 2, len(data))
+	}
+	parseData, remainData := data[:2], data[2:]
+	value := int16(binary.BigEndian.Uint16(parseData))
+	return int64(value), remainData, nil
+}
+
+func parseBytesToUint16(data []byte) (int64, []byte, error) {
+	if len(data) < 2 {
+		return 0, nil, fmt.Errorf("expect data len %v got len %v", 2, len(data))
+	}
+	parseData, remainData := data[:2], data[2:]
+	value := binary.BigEndian.Uint16(parseData)
+	return int64(value), remainData, nil
+}
+
+func parseBytesToInt32(data []byte) (int64, []byte, error) {
+	if len(data) < 4 {
+		return 0, nil, fmt.Errorf("expect data len %v got len %v", 4, len(data))
+	}
+	parseData, remainData := data[:4], data[4:]
+	value := int32(binary.BigEndian.Uint32(parseData))
+	return int64(value), remainData, nil
+}
+
+func parseBytesToUint32(data []byte) (int64, []byte, error) {
+	if len(data) < 4 {
+		return 0, nil, fmt.Errorf("expect data len %v got len %v", 4, len(data))
+	}
+	parseData, remainData := data[:4], data[4:]
+	value := binary.BigEndian.Uint32(parseData)
+	return int64(value), remainData, nil
+}
+
+func parseBytesToUint64(data []byte) (int64, []byte, error) {
+	if len(data) < 8 {
+		return 0, nil, fmt.Errorf("expect data len %v got len %v", 8, len(data))
+	}
+	parseData, remainData := data[:8], data[8:]
+	value := binary.BigEndian.Uint64(parseData)
+	return int64(value), remainData, nil
 }
 
 func bytesToInt64(b []byte) (int64, error) {
@@ -245,4 +283,49 @@ func bytesToInt64(b []byte) (int64, error) {
 	default:
 		return 0, fmt.Errorf("unexpect data len:%v", len(b))
 	}
+}
+
+func parseBytesToBoolean(data []byte) (bool, []byte, error) {
+	if len(data) < 1 {
+		return false, nil, fmt.Errorf("expect data len %v got len %v", 1, len(data))
+	}
+	return data[0] != 0x00, data[1:], nil
+}
+
+func parseBytesToFloat64(data []byte, expLen int) (float64, []byte, error) {
+	if len(data) < expLen {
+		return 0, nil, fmt.Errorf("expect data len %v got len %v", expLen, len(data))
+	}
+	if expLen == 4 {
+		parseData := data[:4]
+		remainData := data[4:]
+		value := math.Float32frombits(binary.BigEndian.Uint32(parseData))
+		return float64(value), remainData, nil
+	} else if expLen == 8 {
+		parseData := data[:8]
+		remainData := data[8:]
+		value := math.Float64frombits(binary.BigEndian.Uint64(parseData))
+		return value, remainData, nil
+	}
+	return 0, nil, fmt.Errorf("expect data len 4/8 got len %v", len(data))
+}
+
+func parseBytesToList(data []byte, seqType typeref.Sequence) ([]interface{}, []byte, error) {
+	if len(data) <= 4 {
+		return nil, nil, fmt.Errorf("expect data len larger than %v got len %v", 4, len(data))
+	}
+	sequenceLen, remained, err := parseBytesToInt64(data, 4)
+	if err != nil {
+		return nil, nil, fmt.Errorf("parse sequence len error:%v", err.Error())
+	}
+	result := make([]interface{}, 0, sequenceLen)
+	var v interface{}
+	for i := 0; i < int(sequenceLen); i++ {
+		v, remained, err = parseDataByType(remained, seqType.InnerType)
+		if err != nil {
+			return nil, nil, fmt.Errorf("parse sequence %v error:%v", seqType.InnerType, err.Error())
+		}
+		result = append(result, v)
+	}
+	return result, remained, nil
 }
