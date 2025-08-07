@@ -3,6 +3,7 @@ package converter
 import (
 	"container/list"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -161,6 +162,7 @@ var (
 		typ.BooleanType,
 		typ.FloatType,
 		typ.SequenceType,
+		typ.StringType,
 	}
 )
 
@@ -212,8 +214,25 @@ func parseDataByType(data []byte, t typeref.TypeRef) (interface{}, []byte, error
 	case typ.SequenceType:
 		seq := t.(typeref.Sequence)
 		return parseBytesToList(data, seq)
+	case typ.StringType:
+		return parseBytesToString(data)
+
 	}
 	return nil, nil, fmt.Errorf("unsupported type:%v", t.TypeName())
+}
+
+func parseBytesToString(data []byte) (value string, remained []byte, err error) {
+	if len(data) <= 4 {
+		return "", nil, fmt.Errorf("expect data len larger than %v got len %v", 4, len(data))
+	}
+	strLen, remained, err := parseBytesToInt64(data, 4)
+	if err != nil {
+		return "", nil, fmt.Errorf("parse sequence len error:%v", err.Error())
+	}
+	if int64(len(data)) < 4+strLen {
+		return "", nil, errors.New("data truncated, insufficient bytes for string")
+	}
+	return string(remained[:strLen]), remained[strLen:], nil
 }
 
 func parseBytesToInt64(data []byte, expLen int) (int64, []byte, error) {

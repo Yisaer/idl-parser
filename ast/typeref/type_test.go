@@ -139,3 +139,17 @@ func TestFloat(t *testing.T) {
 		require.Equal(t, test.expected, result.Output)
 	}
 }
+
+func TestString(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected TypeRef
+	}{
+		{"string", FloatType{SelfType: "string"}},
+	}
+
+	for _, test := range tests {
+		result := ParseString(test.input)
+		require.Equal(t, test.expected, result.Output)
+	}
+}
