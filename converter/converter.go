@@ -263,8 +263,7 @@ func parseBytesToList(data []byte, seqType typeref.Sequence) ([]interface{}, []b
 	if len(data) <= 4 {
 		return nil, nil, fmt.Errorf("expect data len larger than %v got len %v", 4, len(data))
 	}
-	lenData := data[:4]
-	sequenceLen, remained, err := parseBytesToInt64(lenData, 4)
+	sequenceLen, remained, err := parseBytesToInt64(data, 4)
 	if err != nil {
 		return nil, nil, fmt.Errorf("parse sequence len error:%v", err.Error())
 	}
