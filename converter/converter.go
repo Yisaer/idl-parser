@@ -193,12 +193,18 @@ func parseDataByType(data []byte, t typeref.TypeRef) (interface{}, []byte, error
 	switch t.TypeRefType() {
 	case typ.OctetType:
 		return parseBytesToInt64(data, 1)
-	case typ.ShortType, typ.UnsignedShortType:
-		return parseBytesToInt64(data, 2)
-	case typ.LongType, typ.UnsignedLongType:
-		return parseBytesToInt64(data, 4)
-	case typ.LongLongType, typ.UnsignedLongLongType:
+	case typ.ShortType:
+		return parseBytesToInt16(data)
+	case typ.UnsignedShortType:
+		return parseBytesToUint16(data)
+	case typ.LongType:
+		return parseBytesToInt32(data)
+	case typ.UnsignedLongType:
+		return parseBytesToUint32(data)
+	case typ.LongLongType:
 		return parseBytesToInt64(data, 8)
+	case typ.UnsignedLongLongType:
+		return parseBytesToUint64(data)
 	case typ.BooleanType:
 		return parseBytesToBoolean(data)
 	case typ.FloatType:
@@ -217,6 +223,51 @@ func parseBytesToInt64(data []byte, expLen int) (int64, []byte, error) {
 	parseData, remainData := data[:expLen], data[expLen:]
 	got, err := bytesToInt64(parseData)
 	return got, remainData, err
+}
+
+func parseBytesToInt16(data []byte) (int64, []byte, error) {
+	if len(data) < 2 {
+		return 0, nil, fmt.Errorf("expect data len %v got len %v", 2, len(data))
+	}
+	parseData, remainData := data[:2], data[2:]
+	value := int16(binary.BigEndian.Uint16(parseData))
+	return int64(value), remainData, nil
+}
+
+func parseBytesToUint16(data []byte) (int64, []byte, error) {
+	if len(data) < 2 {
+		return 0, nil, fmt.Errorf("expect data len %v got len %v", 2, len(data))
+	}
+	parseData, remainData := data[:2], data[2:]
+	value := binary.BigEndian.Uint16(parseData)
+	return int64(value), remainData, nil
+}
+
+func parseBytesToInt32(data []byte) (int64, []byte, error) {
+	if len(data) < 4 {
+		return 0, nil, fmt.Errorf("expect data len %v got len %v", 4, len(data))
+	}
+	parseData, remainData := data[:4], data[4:]
+	value := int32(binary.BigEndian.Uint32(parseData))
+	return int64(value), remainData, nil
+}
+
+func parseBytesToUint32(data []byte) (int64, []byte, error) {
+	if len(data) < 4 {
+		return 0, nil, fmt.Errorf("expect data len %v got len %v", 4, len(data))
+	}
+	parseData, remainData := data[:4], data[4:]
+	value := binary.BigEndian.Uint32(parseData)
+	return int64(value), remainData, nil
+}
+
+func parseBytesToUint64(data []byte) (int64, []byte, error) {
+	if len(data) < 8 {
+		return 0, nil, fmt.Errorf("expect data len %v got len %v", 8, len(data))
+	}
+	parseData, remainData := data[:8], data[8:]
+	value := binary.BigEndian.Uint64(parseData)
+	return int64(value), remainData, nil
 }
 
 func bytesToInt64(b []byte) (int64, error) {
