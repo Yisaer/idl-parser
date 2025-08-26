@@ -11,8 +11,24 @@ import (
 	"github.com/yisaer/idl-parser/ast/typeref"
 )
 
+// createTestConverter 创建用于测试的 IDLConverter 实例
+func createTestConverter(isLittleEndian bool) *IDLConverter {
+	return &IDLConverter{
+		IsLittleEndian: isLittleEndian,
+	}
+}
+
 func TestConverterDecode(t *testing.T) {
-	c, err := NewIDLConverter("a.b.c", "./testdata/test.idl")
+	c, err := NewIDLConverter("a.b.c", "./testdata/test.idl", false)
+	require.NoError(t, err)
+	testdata := []byte{41, 42}
+	m, err := c.Decode(testdata)
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}{"id1": int64(41), "id2": int64(42)}, m)
+}
+
+func TestConverterDecodeLittleEndian(t *testing.T) {
+	c, err := NewIDLConverter("a.b.c", "./testdata/test.idl", true)
 	require.NoError(t, err)
 	testdata := []byte{41, 42}
 	m, err := c.Decode(testdata)
@@ -27,27 +43,39 @@ func TestParseDataByType_Octet(t *testing.T) {
 		expected       int64
 		expectedRemain []byte
 		expectError    bool
+		isLittleEndian bool
 	}{
 		{
-			name:           "parse octet value 42 successfully",
+			name:           "parse octet value 42 successfully (big endian)",
 			data:           []byte{42, 1, 2, 3},
 			expected:       42,
 			expectedRemain: []byte{1, 2, 3},
 			expectError:    false,
+			isLittleEndian: false,
 		},
 		{
-			name:           "parse octet value 255 successfully",
+			name:           "parse octet value 42 successfully (little endian)",
+			data:           []byte{42, 1, 2, 3},
+			expected:       42,
+			expectedRemain: []byte{1, 2, 3},
+			expectError:    false,
+			isLittleEndian: true,
+		},
+		{
+			name:           "parse octet value 255 successfully (big endian)",
 			data:           []byte{255, 10, 20},
 			expected:       255,
 			expectedRemain: []byte{10, 20},
 			expectError:    false,
+			isLittleEndian: false,
 		},
 		{
-			name:           "parse octet value 0 successfully",
+			name:           "parse octet value 0 successfully (big endian)",
 			data:           []byte{0, 100, 200},
 			expected:       0,
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
+			isLittleEndian: false,
 		},
 		{
 			name:           "should return error when data insufficient",
@@ -55,12 +83,14 @@ func TestParseDataByType_Octet(t *testing.T) {
 			expected:       0,
 			expectedRemain: nil,
 			expectError:    true,
+			isLittleEndian: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			octetType := typeref.NewOctetType()
-			result, remain, err := parseDataByType(tt.data, octetType, ast.Module{})
+			converter := createTestConverter(tt.isLittleEndian)
+			result, remain, err := parseDataByType(tt.data, octetType, ast.Module{}, converter)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -81,27 +111,39 @@ func TestParseDataByType_SequenceOfOctet(t *testing.T) {
 		expected       []interface{}
 		expectedRemain []byte
 		expectError    bool
+		isLittleEndian bool
 	}{
 		{
-			name:           "parse sequence with 3 octet elements",
+			name:           "parse sequence with 3 octet elements (big endian)",
 			data:           []byte{0, 0, 0, 3, 10, 20, 30, 100, 200},
 			expected:       []interface{}{int64(10), int64(20), int64(30)},
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
+			isLittleEndian: false,
 		},
 		{
-			name:           "parse sequence with 0 octet elements",
+			name:           "parse sequence with 3 octet elements (little endian)",
+			data:           []byte{3, 0, 0, 0, 10, 20, 30, 100, 200},
+			expected:       []interface{}{int64(10), int64(20), int64(30)},
+			expectedRemain: []byte{100, 200},
+			expectError:    false,
+			isLittleEndian: true,
+		},
+		{
+			name:           "parse sequence with 0 octet elements (big endian)",
 			data:           []byte{0, 0, 0, 0, 100, 200},
 			expected:       []interface{}{},
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
+			isLittleEndian: false,
 		},
 		{
-			name:           "parse sequence with 1 octet element",
+			name:           "parse sequence with 1 octet element (big endian)",
 			data:           []byte{0, 0, 0, 1, 255, 100, 200},
 			expected:       []interface{}{int64(255)},
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
+			isLittleEndian: false,
 		},
 		{
 			name:           "should return error when insufficient data for sequence length",
@@ -109,6 +151,7 @@ func TestParseDataByType_SequenceOfOctet(t *testing.T) {
 			expected:       nil,
 			expectedRemain: nil,
 			expectError:    true,
+			isLittleEndian: false,
 		},
 		{
 			name:           "should return error when sequence length correct but data insufficient",
@@ -116,6 +159,7 @@ func TestParseDataByType_SequenceOfOctet(t *testing.T) {
 			expected:       nil,
 			expectedRemain: nil,
 			expectError:    true,
+			isLittleEndian: false,
 		},
 	}
 
@@ -123,8 +167,9 @@ func TestParseDataByType_SequenceOfOctet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			octetType := typeref.NewOctetType()
 			sequenceType := typeref.NewSequence(octetType)
+			converter := createTestConverter(tt.isLittleEndian)
 
-			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{})
+			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{}, converter)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -140,8 +185,9 @@ func TestParseDataByType_SequenceOfOctet(t *testing.T) {
 
 func TestParseDataByType_UnsupportedType(t *testing.T) {
 	mockType := &mockUnsupportedType{}
+	converter := createTestConverter(false)
 
-	result, remain, err := parseDataByType([]byte{1, 2, 3}, mockType, ast.Module{})
+	result, remain, err := parseDataByType([]byte{1, 2, 3}, mockType, ast.Module{}, converter)
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unsupported type")
@@ -172,20 +218,39 @@ func TestParseDataByType_Short(t *testing.T) {
 		expected       int64
 		expectedRemain []byte
 		expectError    bool
+		isLittleEndian bool
 	}{
 		{
-			name:           "parse short value 12345 successfully",
+			name:           "parse short value 12345 successfully (big endian)",
 			data:           []byte{0x30, 0x39, 1, 2, 3},
 			expected:       12345,
 			expectedRemain: []byte{1, 2, 3},
 			expectError:    false,
+			isLittleEndian: false,
 		},
 		{
-			name:           "parse short value -12345 successfully",
+			name:           "parse short value 12345 successfully (little endian)",
+			data:           []byte{0x39, 0x30, 1, 2, 3},
+			expected:       12345,
+			expectedRemain: []byte{1, 2, 3},
+			expectError:    false,
+			isLittleEndian: true,
+		},
+		{
+			name:           "parse short value -12345 successfully (big endian)",
 			data:           []byte{0xCF, 0xC7, 10, 20},
 			expected:       -12345,
 			expectedRemain: []byte{10, 20},
 			expectError:    false,
+			isLittleEndian: false,
+		},
+		{
+			name:           "parse short value -12345 successfully (little endian)",
+			data:           []byte{0xC7, 0xCF, 10, 20},
+			expected:       -12345,
+			expectedRemain: []byte{10, 20},
+			expectError:    false,
+			isLittleEndian: true,
 		},
 		{
 			name:           "should return error when data insufficient for short",
@@ -193,13 +258,15 @@ func TestParseDataByType_Short(t *testing.T) {
 			expected:       0,
 			expectedRemain: nil,
 			expectError:    true,
+			isLittleEndian: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			shortType := typeref.NewShortType()
-			result, remain, err := parseDataByType(tt.data, shortType, ast.Module{})
+			converter := createTestConverter(tt.isLittleEndian)
+			result, remain, err := parseDataByType(tt.data, shortType, ast.Module{}, converter)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -220,20 +287,31 @@ func TestParseDataByType_UnsignedShort(t *testing.T) {
 		expected       int64
 		expectedRemain []byte
 		expectError    bool
+		isLittleEndian bool
 	}{
 		{
-			name:           "parse unsigned short value 65535 successfully",
+			name:           "parse unsigned short value 65535 successfully (big endian)",
 			data:           []byte{0xFF, 0xFF, 1, 2, 3},
 			expected:       65535,
 			expectedRemain: []byte{1, 2, 3},
 			expectError:    false,
+			isLittleEndian: false,
 		},
 		{
-			name:           "parse unsigned short value 0 successfully",
+			name:           "parse unsigned short value 65535 successfully (little endian)",
+			data:           []byte{0xFF, 0xFF, 1, 2, 3},
+			expected:       65535,
+			expectedRemain: []byte{1, 2, 3},
+			expectError:    false,
+			isLittleEndian: true,
+		},
+		{
+			name:           "parse unsigned short value 0 successfully (big endian)",
 			data:           []byte{0x00, 0x00, 10, 20},
 			expected:       0,
 			expectedRemain: []byte{10, 20},
 			expectError:    false,
+			isLittleEndian: false,
 		},
 		{
 			name:           "should return error when data insufficient for unsigned short",
@@ -241,13 +319,15 @@ func TestParseDataByType_UnsignedShort(t *testing.T) {
 			expected:       0,
 			expectedRemain: nil,
 			expectError:    true,
+			isLittleEndian: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			unsignedShortType := typeref.NewUnsignedShortType()
-			result, remain, err := parseDataByType(tt.data, unsignedShortType, ast.Module{})
+			converter := createTestConverter(tt.isLittleEndian)
+			result, remain, err := parseDataByType(tt.data, unsignedShortType, ast.Module{}, converter)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -268,20 +348,31 @@ func TestParseDataByType_Long(t *testing.T) {
 		expected       int64
 		expectedRemain []byte
 		expectError    bool
+		isLittleEndian bool
 	}{
 		{
-			name:           "parse long value 1234567890 successfully",
+			name:           "parse long value 1234567890 successfully (big endian)",
 			data:           []byte{0x49, 0x96, 0x02, 0xD2, 1, 2, 3},
 			expected:       1234567890,
 			expectedRemain: []byte{1, 2, 3},
 			expectError:    false,
+			isLittleEndian: false,
 		},
 		{
-			name:           "parse long value -1234567890 successfully",
+			name:           "parse long value 1234567890 successfully (little endian)",
+			data:           []byte{0xD2, 0x02, 0x96, 0x49, 1, 2, 3},
+			expected:       1234567890,
+			expectedRemain: []byte{1, 2, 3},
+			expectError:    false,
+			isLittleEndian: true,
+		},
+		{
+			name:           "parse long value -1234567890 successfully (big endian)",
 			data:           []byte{0xB6, 0x69, 0xFD, 0x2E, 10, 20},
 			expected:       -1234567890,
 			expectedRemain: []byte{10, 20},
 			expectError:    false,
+			isLittleEndian: false,
 		},
 		{
 			name:           "should return error when data insufficient for long",
@@ -289,13 +380,15 @@ func TestParseDataByType_Long(t *testing.T) {
 			expected:       0,
 			expectedRemain: nil,
 			expectError:    true,
+			isLittleEndian: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			longType := typeref.NewLongType()
-			result, remain, err := parseDataByType(tt.data, longType, ast.Module{})
+			converter := createTestConverter(tt.isLittleEndian)
+			result, remain, err := parseDataByType(tt.data, longType, ast.Module{}, converter)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -343,7 +436,8 @@ func TestParseDataByType_UnsignedLong(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			unsignedLongType := typeref.NewUnsignedLong()
-			result, remain, err := parseDataByType(tt.data, unsignedLongType, ast.Module{})
+			converter := createTestConverter(false)
+			result, remain, err := parseDataByType(tt.data, unsignedLongType, ast.Module{}, converter)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -391,7 +485,8 @@ func TestParseDataByType_LongLong(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			longLongType := typeref.NewLongLongType()
-			result, remain, err := parseDataByType(tt.data, longLongType, ast.Module{})
+			converter := createTestConverter(false)
+			result, remain, err := parseDataByType(tt.data, longLongType, ast.Module{}, converter)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -439,7 +534,8 @@ func TestParseDataByType_UnsignedLongLong(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			unsignedLongLongType := typeref.NewUnsignedLongLong()
-			result, remain, err := parseDataByType(tt.data, unsignedLongLongType, ast.Module{})
+			converter := createTestConverter(false)
+			result, remain, err := parseDataByType(tt.data, unsignedLongLongType, ast.Module{}, converter)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -494,7 +590,8 @@ func TestParseDataByType_Boolean(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			booleanType := typeref.NewBooleanType()
-			result, remain, err := parseDataByType(tt.data, booleanType, ast.Module{})
+			converter := createTestConverter(false)
+			result, remain, err := parseDataByType(tt.data, booleanType, ast.Module{}, converter)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -515,27 +612,39 @@ func TestParseDataByType_Float(t *testing.T) {
 		expected       float64
 		expectedRemain []byte
 		expectError    bool
+		isLittleEndian bool
 	}{
 		{
-			name:           "parse float value 3.14 successfully",
+			name:           "parse float value 3.14 successfully (big endian)",
 			data:           []byte{0x40, 0x48, 0xF5, 0xC3, 1, 2, 3},
 			expected:       3.14,
 			expectedRemain: []byte{1, 2, 3},
 			expectError:    false,
+			isLittleEndian: false,
 		},
 		{
-			name:           "parse float value 0.0 successfully",
+			name:           "parse float value 3.14 successfully (little endian)",
+			data:           []byte{0xC3, 0xF5, 0x48, 0x40, 1, 2, 3},
+			expected:       3.14,
+			expectedRemain: []byte{1, 2, 3},
+			expectError:    false,
+			isLittleEndian: true,
+		},
+		{
+			name:           "parse float value 0.0 successfully (big endian)",
 			data:           []byte{0x00, 0x00, 0x00, 0x00, 10, 20},
 			expected:       0.0,
 			expectedRemain: []byte{10, 20},
 			expectError:    false,
+			isLittleEndian: false,
 		},
 		{
-			name:           "parse float value -2.5 successfully",
+			name:           "parse float value -2.5 successfully (big endian)",
 			data:           []byte{0xC0, 0x20, 0x00, 0x00, 100, 200},
 			expected:       -2.5,
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
+			isLittleEndian: false,
 		},
 		{
 			name:           "should return error when data insufficient for float",
@@ -543,13 +652,15 @@ func TestParseDataByType_Float(t *testing.T) {
 			expected:       0.0,
 			expectedRemain: nil,
 			expectError:    true,
+			isLittleEndian: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			floatType := typeref.NewFloatType()
-			result, remain, err := parseDataByType(tt.data, floatType, ast.Module{})
+			converter := createTestConverter(tt.isLittleEndian)
+			result, remain, err := parseDataByType(tt.data, floatType, ast.Module{}, converter)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -598,8 +709,9 @@ func TestParseDataByType_SequenceOfShort(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			shortType := typeref.NewShortType()
 			sequenceType := typeref.NewSequence(shortType)
+			converter := createTestConverter(false)
 
-			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{})
+			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{}, converter)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -648,8 +760,9 @@ func TestParseDataByType_SequenceOfBoolean(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			booleanType := typeref.NewBooleanType()
 			sequenceType := typeref.NewSequence(booleanType)
+			converter := createTestConverter(false)
 
-			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{})
+			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{}, converter)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -718,7 +831,8 @@ func TestParseDataByType_String(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			stringType := typeref.NewStringType()
-			result, remain, err := parseDataByType(tt.data, stringType, ast.Module{})
+			converter := createTestConverter(false)
+			result, remain, err := parseDataByType(tt.data, stringType, ast.Module{}, converter)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -795,8 +909,9 @@ func TestParseDataByType_SequenceOfString(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			stringType := typeref.NewStringType()
 			sequenceType := typeref.NewSequence(stringType)
+			converter := createTestConverter(false)
 
-			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{})
+			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{}, converter)
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -808,4 +923,84 @@ func TestParseDataByType_SequenceOfString(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestConverterDecodeComplexStruct(t *testing.T) {
+	// 测试大端序
+	t.Run("big endian", func(t *testing.T) {
+		c, err := NewIDLConverter("a.b.complex", "./testdata/test_complex.idl", false)
+		require.NoError(t, err)
+
+		// 大端序数据：short(12345), long(1234567890), float(3.14), sequence[1,2,3], string("test")
+		testdata := []byte{
+			0x30, 0x39, // short: 12345 (big endian)
+			0x49, 0x96, 0x02, 0xD2, // long: 1234567890 (big endian)
+			0x40, 0x48, 0xF5, 0xC3, // float: 3.14 (big endian)
+			0x00, 0x00, 0x00, 0x03, // sequence length: 3 (big endian)
+			0x01, 0x02, 0x03, // sequence data: [1, 2, 3]
+			0x00, 0x00, 0x00, 0x04, // string length: 4 (big endian)
+			't', 'e', 's', 't', // string: "test"
+		}
+
+		m, err := c.Decode(testdata)
+		require.NoError(t, err)
+		require.Equal(t, int64(12345), m["id"])
+		require.Equal(t, int64(1234567890), m["timestamp"])
+		require.InDelta(t, 3.14, m["value"], 0.001) // 使用 InDelta 比较浮点数
+		require.Equal(t, []interface{}{int64(1), int64(2), int64(3)}, m["data"])
+		require.Equal(t, "test", m["name"])
+	})
+
+	// 测试小端序
+	t.Run("little endian", func(t *testing.T) {
+		c, err := NewIDLConverter("a.b.complex", "./testdata/test_complex.idl", true)
+		require.NoError(t, err)
+
+		// 小端序数据：short(12345), long(1234567890), float(3.14), sequence[1,2,3], string("test")
+		testdata := []byte{
+			0x39, 0x30, // short: 12345 (little endian)
+			0xD2, 0x02, 0x96, 0x49, // long: 1234567890 (little endian)
+			0xC3, 0xF5, 0x48, 0x40, // float: 3.14 (little endian)
+			0x03, 0x00, 0x00, 0x00, // sequence length: 3 (little endian)
+			0x01, 0x02, 0x03, // sequence data: [1, 2, 3]
+			0x04, 0x00, 0x00, 0x00, // string length: 4 (little endian)
+			't', 'e', 's', 't', // string: "test"
+		}
+
+		m, err := c.Decode(testdata)
+		require.NoError(t, err)
+		require.Equal(t, int64(12345), m["id"])
+		require.Equal(t, int64(1234567890), m["timestamp"])
+		require.InDelta(t, 3.14, m["value"], 0.001) // 使用 InDelta 比较浮点数
+		require.Equal(t, []interface{}{int64(1), int64(2), int64(3)}, m["data"])
+		require.Equal(t, "test", m["name"])
+	})
+}
+
+func TestConverterDecodeComplexStructMixedEndian(t *testing.T) {
+	// 测试混合字节序的情况（虽然实际使用中不常见，但测试边界情况）
+	t.Run("mixed endian edge case", func(t *testing.T) {
+		c, err := NewIDLConverter("a.b.complex", "./testdata/test_complex.idl", true)
+		require.NoError(t, err)
+
+		// 小端序数据，但包含一些边界值
+		// 总长度：2(short) + 4(long) + 4(float) + 4(seq_len) + 0(seq_data) + 4(str_len) + 0(str_data) = 22字节
+		testdata := []byte{
+			0xFF, 0x7F, // short: 32767 (little endian, max positive short)
+			0xFF, 0xFF, 0xFF, 0x7F, // long: 2147483647 (little endian, max positive long)
+			0x00, 0x00, 0x80, 0x3F, // float: 1.0 (little endian)
+			0x00, 0x00, 0x00, 0x00, // sequence length: 0 (little endian)
+			// 序列数据为空（长度为0）
+			0x00, 0x00, 0x00, 0x00, // string length: 0 (little endian)
+			// 字符串数据为空（长度为0）
+		}
+
+		m, err := c.Decode(testdata)
+		require.NoError(t, err)
+		require.Equal(t, int64(32767), m["id"])
+		require.Equal(t, int64(2147483647), m["timestamp"])
+		require.InDelta(t, 1.0, m["value"], 0.001) // 使用 InDelta 比较浮点数
+		require.Equal(t, []interface{}{}, m["data"])
+		require.Equal(t, "", m["name"])
+	})
 }
