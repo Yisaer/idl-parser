@@ -1,0 +1,11 @@
+module a {
+    module b {
+        struct complex {
+            short id;
+            long timestamp;
+            float value;
+            sequence<octet> data;
+            string name;
+        }
+    };
+}
