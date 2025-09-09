@@ -246,12 +246,7 @@ func parseDataByType(data []byte, t typeref.TypeRef, module ast.Module, converte
 		return parseString(data, st, module, converter)
 	case typ.SelfDefinedTypeType:
 		definedType := t.(typeref.TypeName)
-		for _, c := range module.Content {
-			if c.GetName() == definedType.Name && c.ModuleContentType() == typ.StructType {
-				st := c.(struct_type.Struct)
-				return parseBytesToStruct(data, st, module, converter)
-			}
-		}
+		return parseSelfDefineType(data, definedType, module, converter)
 	}
 	return nil, nil, fmt.Errorf("unsupported type:%v", t.TypeName())
 }
@@ -310,18 +305,12 @@ func parseString(data []byte, string typeref.StringType, _ ast.Module, converter
 	return parseBytesToString(data, converter)
 }
 
-func parseBytesToStruct(data []byte, st struct_type.Struct, module ast.Module, converter *IDLConverter) (map[string]interface{}, []byte, error) {
-	var v interface{}
-	var err error
-	var remained []byte
-	remained = data
-	m := make(map[string]any, len(st.Fields))
-	for _, field := range st.Fields {
-		v, remained, err = parseDataByType(remained, field.Type, module, converter)
-		if err != nil {
-			return nil, nil, fmt.Errorf("struct %v parse field %v error:%v", st, field.Name, err.Error())
+func parseSelfDefineType(data []byte, definedType typeref.TypeName, module ast.Module, converter *IDLConverter) (interface{}, []byte, error) {
+	for _, c := range module.Content {
+		if c.GetName() == definedType.Name && c.ModuleContentType() == typ.StructType {
+			st := c.(struct_type.Struct)
+			return parseBytesToStruct(data, st, module, converter)
 		}
-		m[field.Name] = v
 	}
-	return m, remained, nil
+	return nil, nil, fmt.Errorf("unsupported type:%v", definedType.Name)
 }

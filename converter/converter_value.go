@@ -7,8 +7,25 @@ import (
 	"math"
 
 	"github.com/yisaer/idl-parser/ast"
+	"github.com/yisaer/idl-parser/ast/struct_type"
 	"github.com/yisaer/idl-parser/ast/typeref"
 )
+
+func parseBytesToStruct(data []byte, st struct_type.Struct, module ast.Module, converter *IDLConverter) (map[string]interface{}, []byte, error) {
+	var v interface{}
+	var err error
+	var remained []byte
+	remained = data
+	m := make(map[string]any, len(st.Fields))
+	for _, field := range st.Fields {
+		v, remained, err = parseDataByType(remained, field.Type, module, converter)
+		if err != nil {
+			return nil, nil, fmt.Errorf("struct %v parse field %v error:%v", st, field.Name, err.Error())
+		}
+		m[field.Name] = v
+	}
+	return m, remained, nil
+}
 
 func parseBytesToString(data []byte, converter *IDLConverter) (value string, remained []byte, err error) {
 	if len(data) < 4 {
