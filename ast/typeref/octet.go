@@ -8,7 +8,7 @@ import (
 )
 
 type OctetType struct {
-	SelfType string `json:"self_type"`
+	SelfType  string `json:"self_type"`
 	ArraySize int    `json:"array_size,omitempty"` // 0 means not an array
 }
 
@@ -41,16 +41,16 @@ func ParseOctet(code string) gomme.Result[OctetType, string] {
 				return NewOctetArrayType(output.Right), nil
 			},
 		)(code)
-		
+
 		// If array parsing succeeded and consumed all input, return it
 		if arrayResult.Err == nil && arrayResult.Remaining == "" {
 			return arrayResult
 		}
-		
+
 		// If we started with "octet[" but parsing failed, return the error
 		return arrayResult
 	}
-	
+
 	// Otherwise, try plain octet format
 	return gomme.Map(
 		gomme.Token[string]("octet"),

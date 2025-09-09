@@ -3,7 +3,7 @@ package utils
 import (
 	"unicode"
 	"unicode/utf8"
-	
+
 	"github.com/oleiade/gomme"
 )
 
