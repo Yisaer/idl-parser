@@ -309,3 +309,19 @@ func parseFloat(data []byte, float typeref.FloatType, _ ast.Module, converter *I
 func parseString(data []byte, string typeref.StringType, _ ast.Module, converter *IDLConverter) (interface{}, []byte, error) {
 	return parseBytesToString(data, converter)
 }
+
+func parseBytesToStruct(data []byte, st struct_type.Struct, module ast.Module, converter *IDLConverter) (map[string]interface{}, []byte, error) {
+	var v interface{}
+	var err error
+	var remained []byte
+	remained = data
+	m := make(map[string]any, len(st.Fields))
+	for _, field := range st.Fields {
+		v, remained, err = parseDataByType(remained, field.Type, module, converter)
+		if err != nil {
+			return nil, nil, fmt.Errorf("struct %v parse field %v error:%v", st, field.Name, err.Error())
+		}
+		m[field.Name] = v
+	}
+	return m, remained, nil
+}
