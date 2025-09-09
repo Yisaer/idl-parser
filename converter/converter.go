@@ -310,6 +310,20 @@ func parseSelfDefineType(data []byte, definedType typeref.TypeName, module ast.M
 	for _, c := range module.Content {
 		if c.GetName() == definedType.Name && c.ModuleContentType() == typ.StructType {
 			st := c.(struct_type.Struct)
+			if definedType.ArraySize > 0 {
+				remained := data
+				var err error
+				var v map[string]interface{}
+				result := make([]interface{}, 0, definedType.ArraySize)
+				for i := 0; i < definedType.ArraySize; i++ {
+					v, remained, err = parseBytesToStruct(remained, st, module, converter)
+					if err != nil {
+						return nil, nil, fmt.Errorf("parse array element %v error:%v", i, err.Error())
+					}
+					result = append(result, v)
+				}
+				return result, remained, nil
+			}
 			return parseBytesToStruct(data, st, module, converter)
 		}
 	}
