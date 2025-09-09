@@ -62,3 +62,16 @@ func Identifier(code string) gomme.Result[string, string] {
 			gomme.Alphanumeric0[string](),
 		))(code)
 }
+
+func ParseDigit(code string) gomme.Result[int, string] {
+	return gomme.Map(
+		gomme.Digit1[string](),
+		func(digits string) (int, error) {
+			result := 0
+			for _, digit := range digits {
+				result = result*10 + int(digit-'0')
+			}
+			return result, nil
+		},
+	)(code)
+}
