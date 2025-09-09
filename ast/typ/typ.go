@@ -25,6 +25,7 @@ type FieldRefType int
 const (
 	BitFieldType FieldRefType = iota
 	OctetType
+	OctetArrayType
 	ShortType
 	UnsignedShortType
 	LongType

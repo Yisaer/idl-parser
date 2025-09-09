@@ -41,7 +41,7 @@ func parseField(code string) gomme.Result[Field, string] {
 				typeRefParser,
 				gomme.Whitespace1[string](),
 				gomme.Recognize(
-					gomme.Pair(gomme.Alpha1[string](), gomme.Alphanumeric0[string]()),
+					utils.ParseValidChar,
 				),
 			),
 		),
