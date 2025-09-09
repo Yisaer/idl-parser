@@ -2,6 +2,8 @@ package converter
 
 import (
 	"encoding/binary"
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -16,6 +18,13 @@ func createTestConverter(isLittleEndian bool) *IDLConverter {
 	return &IDLConverter{
 		IsLittleEndian: isLittleEndian,
 	}
+}
+
+func TestConverterSts(t *testing.T) {
+	c, err := NewIDLConverter("a.Target", "./testdata/test_sts.idl", false)
+	require.NoError(t, err)
+	v, _ := json.Marshal(c.Module)
+	fmt.Println(string(v))
 }
 
 func TestConverterDecode(t *testing.T) {

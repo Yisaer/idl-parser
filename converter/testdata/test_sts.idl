@@ -1,0 +1,39 @@
+module a {
+    struct SeatPositionStatus {
+        octet MainXDir;
+        octet MainZDir;
+        octet FrontZDir;
+        octet BackRestAngle;
+        octet LegRestAngle;
+        octet LegRestXDir;
+        octet FootRestAngle;
+        octet FrontXDir;
+        octet MainYDir;
+    };
+
+    struct SeatMassagStatus {
+        octet CS_SeatMassagStrengthSts;
+        octet CS_SeatMassagModeSts;
+    };
+
+    struct SeatInstanceStatus {
+        octet CS_SeatId;
+        SeatPositionStatus SeatPositionStatus;
+        octet CS_OccupiedStatus;
+        octet CS_SeatSwitchStatus;
+        octet CS_SeatHeatingStatus;
+        octet CS_SeatVentilationStatus;
+        SeatMassagStatus SeatMassagStatus;
+        octet CS_SeatFoldStatus;
+        octet CS_SeatControlStatus;
+        octet CS_FuncActiveStatus;
+        octet CS_SeatForbiddenCause;
+        octet CS_SeatWarningStatus;
+        octet CS_OnOffStatus;
+    };
+
+    struct Target {
+        SeatInstanceStatus[8] SeatInstanceStatusList;
+    };
+
+}

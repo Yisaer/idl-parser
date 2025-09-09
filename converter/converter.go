@@ -162,6 +162,7 @@ var (
 		typ.FloatType,
 		typ.SequenceType,
 		typ.StringType,
+		typ.SelfDefinedTypeType,
 	}
 )
 

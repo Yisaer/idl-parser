@@ -1,6 +1,11 @@
 package utils
 
-import "github.com/oleiade/gomme"
+import (
+	"unicode"
+	"unicode/utf8"
+	
+	"github.com/oleiade/gomme"
+)
 
 func ParseComment(code string) gomme.Result[string, string] {
 	return gomme.Recognize(
@@ -74,4 +79,21 @@ func ParseDigit(code string) gomme.Result[int, string] {
 			return result, nil
 		},
 	)(code)
+}
+
+func ParseValidChar(code string) gomme.Result[string, string] {
+	var matched string
+	remaining := code
+	for len(remaining) > 0 {
+		r, size := utf8.DecodeRuneInString(remaining)
+		if !(unicode.IsLetter(r) || unicode.IsDigit(r) || r == '.' || r == '/' || r == '_') {
+			break
+		}
+		matched += string(r)
+		remaining = remaining[size:]
+	}
+	if len(matched) == 0 && len(code) > 0 {
+		return gomme.Failure[string, string](gomme.NewError[string](code, "expect rune"), code)
+	}
+	return gomme.Success[string, string](matched, remaining)
 }
