@@ -190,28 +190,60 @@ func parseDataByType(data []byte, t typeref.TypeRef, module ast.Module, converte
 	case typ.ShortType:
 		short, ok := t.(typeref.ShortType)
 		if !ok {
-			return nil, nil, fmt.Errorf("type %v is not octet type", t.TypeRefType())
+			return nil, nil, fmt.Errorf("type %v is not short type", t.TypeRefType())
 		}
 		return parseShort(data, short, module, converter)
 	case typ.UnsignedShortType:
-		return parseBytesToUint16(data, converter)
+		unsignedShort, ok := t.(typeref.UnsignedShortType)
+		if !ok {
+			return nil, nil, fmt.Errorf("type %v is not unsigned short type", t.TypeRefType())
+		}
+		return parseUnsignedShort(data, unsignedShort, module, converter)
 	case typ.LongType:
-		return parseBytesToInt32(data, converter)
+		long, ok := t.(typeref.LongType)
+		if !ok {
+			return nil, nil, fmt.Errorf("type %v is not long type", t.TypeRefType())
+		}
+		return parseLong(data, long, module, converter)
 	case typ.UnsignedLongType:
-		return parseBytesToUint32(data, converter)
+		unsignedLong, ok := t.(typeref.UnsignedLongType)
+		if !ok {
+			return nil, nil, fmt.Errorf("type %v is not unsigned long type", t.TypeRefType())
+		}
+		return parseUnsignedLong(data, unsignedLong, module, converter)
 	case typ.LongLongType:
-		return parseBytesToInt64(data, 8, converter)
+		longLong, ok := t.(typeref.LongLongType)
+		if !ok {
+			return nil, nil, fmt.Errorf("type %v is not long long type", t.TypeRefType())
+		}
+		return parseLongLong(data, longLong, module, converter)
 	case typ.UnsignedLongLongType:
-		return parseBytesToUint64(data, converter)
+		unsignedLongLong, ok := t.(typeref.UnsignedLongLongType)
+		if !ok {
+			return nil, nil, fmt.Errorf("type %v is not unsigned long long type", t.TypeRefType())
+		}
+		return parseUnsignedLongLong(data, unsignedLongLong, module, converter)
 	case typ.BooleanType:
-		return parseBytesToBoolean(data)
+		boolean, ok := t.(typeref.BooleanType)
+		if !ok {
+			return nil, nil, fmt.Errorf("type %v is not boolean type", t.TypeRefType())
+		}
+		return parseBoolean(data, boolean, module, converter)
 	case typ.FloatType:
-		return parseBytesToFloat64(data, 4, converter)
+		float, ok := t.(typeref.FloatType)
+		if !ok {
+			return nil, nil, fmt.Errorf("type %v is not float type", t.TypeRefType())
+		}
+		return parseFloat(data, float, module, converter)
 	case typ.SequenceType:
 		seq := t.(typeref.Sequence)
 		return parseBytesToList(data, seq, module, converter)
 	case typ.StringType:
-		return parseBytesToString(data, converter)
+		st, ok := t.(typeref.StringType)
+		if !ok {
+			return nil, nil, fmt.Errorf("type %v is not string type", t.TypeRefType())
+		}
+		return parseString(data, st, module, converter)
 	case typ.SelfDefinedTypeType:
 		definedType := t.(typeref.TypeName)
 		for _, c := range module.Content {
@@ -244,4 +276,36 @@ func parseOctet(data []byte, ot typeref.OctetType, _ ast.Module, converter *IDLC
 
 func parseShort(data []byte, short typeref.ShortType, _ ast.Module, converter *IDLConverter) (interface{}, []byte, error) {
 	return parseBytesToInt16(data, converter)
+}
+
+func parseUnsignedShort(data []byte, unsignedShort typeref.UnsignedShortType, _ ast.Module, converter *IDLConverter) (interface{}, []byte, error) {
+	return parseBytesToUint16(data, converter)
+}
+
+func parseLong(data []byte, long typeref.LongType, _ ast.Module, converter *IDLConverter) (interface{}, []byte, error) {
+	return parseBytesToInt32(data, converter)
+}
+
+func parseUnsignedLong(data []byte, unsignedLong typeref.UnsignedLongType, _ ast.Module, converter *IDLConverter) (interface{}, []byte, error) {
+	return parseBytesToUint32(data, converter)
+}
+
+func parseLongLong(data []byte, longLong typeref.LongLongType, _ ast.Module, converter *IDLConverter) (interface{}, []byte, error) {
+	return parseBytesToInt64(data, 8, converter)
+}
+
+func parseUnsignedLongLong(data []byte, unsignedLongLong typeref.UnsignedLongLongType, _ ast.Module, converter *IDLConverter) (interface{}, []byte, error) {
+	return parseBytesToUint64(data, converter)
+}
+
+func parseBoolean(data []byte, boolean typeref.BooleanType, _ ast.Module, converter *IDLConverter) (interface{}, []byte, error) {
+	return parseBytesToBoolean(data)
+}
+
+func parseFloat(data []byte, float typeref.FloatType, _ ast.Module, converter *IDLConverter) (interface{}, []byte, error) {
+	return parseBytesToFloat64(data, 4, converter)
+}
+
+func parseString(data []byte, string typeref.StringType, _ ast.Module, converter *IDLConverter) (interface{}, []byte, error) {
+	return parseBytesToString(data, converter)
 }
