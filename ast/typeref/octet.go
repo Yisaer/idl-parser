@@ -24,6 +24,7 @@ func (t OctetType) TypeName() string {
 	return t.SelfType
 }
 
+// ParseOctet 解析 octet 类型，支持数组格式
 func ParseOctet(code string) gomme.Result[OctetType, string] {
 	// Check if input starts with "octet["
 	if len(code) >= 6 && code[:6] == "octet[" {
@@ -52,6 +53,11 @@ func ParseOctet(code string) gomme.Result[OctetType, string] {
 	}
 
 	// Otherwise, try plain octet format
+	return ParsePlainOctet(code)
+}
+
+// ParsePlainOctet 解析纯 octet 类型（不包含数组）
+func ParsePlainOctet(code string) gomme.Result[OctetType, string] {
 	return gomme.Map(
 		gomme.Token[string]("octet"),
 		func(token string) (OctetType, error) {

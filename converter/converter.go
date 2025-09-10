@@ -176,6 +176,12 @@ func (c *IDLConverter) Decode(schemaID string, data []byte) (map[string]interfac
 
 func (c *IDLConverter) parseDataByType(data []byte, t typeref.TypeRef, module ast.Module) (interface{}, []byte, error) {
 	switch t.TypeRefType() {
+	case typ.ArrayType:
+		arrayType, ok := t.(typeref.ArrayType)
+		if !ok {
+			return nil, nil, fmt.Errorf("type %v is not array type", t.TypeRefType())
+		}
+		return c.parseArray(data, arrayType, module)
 	case typ.OctetType:
 		ot, ok := t.(typeref.OctetType)
 		if !ok {
@@ -244,6 +250,22 @@ func (c *IDLConverter) parseDataByType(data []byte, t typeref.TypeRef, module as
 		return c.parseSelfDefineType(data, definedType, module)
 	}
 	return nil, nil, fmt.Errorf("unsupported type:%v", t.TypeName())
+}
+
+func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, module ast.Module) (interface{}, []byte, error) {
+	remained := data
+	var err error
+	var v interface{}
+	result := make([]interface{}, 0, arrayType.ArraySize)
+	
+	for i := 0; i < arrayType.ArraySize; i++ {
+		v, remained, err = c.parseDataByType(remained, arrayType.InnerType, module)
+		if err != nil {
+			return nil, nil, fmt.Errorf("parse array element %v error:%v", i, err.Error())
+		}
+		result = append(result, v)
+	}
+	return result, remained, nil
 }
 
 func (c *IDLConverter) parseOctet(data []byte, ot typeref.OctetType, _ ast.Module) (interface{}, []byte, error) {
