@@ -2,6 +2,7 @@ package converter
 
 import (
 	"encoding/binary"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,6 +11,12 @@ import (
 	"github.com/yisaer/idl-parser/ast/typ"
 	"github.com/yisaer/idl-parser/ast/typeref"
 )
+
+func TestConverterErr(t *testing.T) {
+	_, err := NewIDLConverter("./testdata/test_error.idl", false)
+	require.Error(t, err)
+	fmt.Println(err.Error())
+}
 
 // createTestConverter 创建用于测试的 IDLConverter 实例
 func createTestConverter(isLittleEndian bool) *IDLConverter {

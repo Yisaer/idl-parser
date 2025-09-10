@@ -128,13 +128,13 @@ func TestParseTypeNameArrayViaTypeRef(t *testing.T) {
 				return
 			}
 			require.Equal(t, typ.ArrayType, result.Output.TypeRefType())
-			
+
 			arrayType, ok := result.Output.(ArrayType)
 			require.True(t, ok)
-			
+
 			typeName, ok := arrayType.InnerType.(TypeName)
 			require.True(t, ok)
-			
+
 			require.Equal(t, tt.expectedName, typeName.Name)
 			require.Equal(t, tt.expectedSize, arrayType.ArraySize)
 			require.Equal(t, tt.expectedRemain, result.Remaining)

@@ -15,7 +15,7 @@ func TestParseArray(t *testing.T) {
 		expected ArrayType
 	}{
 		{
-			name: "parse short array with size 8",
+			name:  "parse short array with size 8",
 			input: "short[8]",
 			expected: ArrayType{
 				InnerType: NewShortType(),
@@ -23,7 +23,7 @@ func TestParseArray(t *testing.T) {
 			},
 		},
 		{
-			name: "parse long array with size 16",
+			name:  "parse long array with size 16",
 			input: "long[16]",
 			expected: ArrayType{
 				InnerType: NewLongType(),
@@ -31,7 +31,7 @@ func TestParseArray(t *testing.T) {
 			},
 		},
 		{
-			name: "parse unsigned short array with size 4",
+			name:  "parse unsigned short array with size 4",
 			input: "unsigned short[4]",
 			expected: ArrayType{
 				InnerType: NewUnsignedShortType(),
@@ -39,7 +39,7 @@ func TestParseArray(t *testing.T) {
 			},
 		},
 		{
-			name: "parse boolean array with size 1",
+			name:  "parse boolean array with size 1",
 			input: "boolean[1]",
 			expected: ArrayType{
 				InnerType: NewBooleanType(),
@@ -47,7 +47,7 @@ func TestParseArray(t *testing.T) {
 			},
 		},
 		{
-			name: "parse float array with size 32",
+			name:  "parse float array with size 32",
 			input: "float[32]",
 			expected: ArrayType{
 				InnerType: NewFloatType(),

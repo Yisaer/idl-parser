@@ -36,7 +36,7 @@ func (c *IDLConverter) init() error {
 	}
 	res := ast.Parse(string(v))
 	if res.Err != nil {
-		return res.Err
+		return fmt.Errorf("remaining: %v, err:%v", res.Remaining, res.Err)
 	}
 	c.Module = res.Output
 	if err := c.verifyModule(c.Module); err != nil {

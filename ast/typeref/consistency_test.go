@@ -14,7 +14,6 @@ func TestParseTypeRefConsistency(t *testing.T) {
 		input    string
 		expected typ.FieldRefType
 	}{
-		// 基础类型测试
 		{
 			name:     "short",
 			input:    "short",
@@ -131,7 +130,7 @@ func TestParseBaseTypeVsParseTypeRefConsistency(t *testing.T) {
 	// 测试基础类型在 ParseBaseType 和 ParseTypeRef 中的一致性
 	baseTypes := []string{
 		"short",
-		"long", 
+		"long",
 		"boolean",
 		"float",
 		"string",
@@ -148,7 +147,7 @@ func TestParseBaseTypeVsParseTypeRefConsistency(t *testing.T) {
 		t.Run(input, func(t *testing.T) {
 			baseResult := ParseBaseType(input)
 			typeRefResult := ParseTypeRef(input)
-			
+
 			if baseResult.Err != nil {
 				t.Errorf("ParseBaseType unexpected error: %v", baseResult.Err)
 				return
@@ -157,7 +156,7 @@ func TestParseBaseTypeVsParseTypeRefConsistency(t *testing.T) {
 				t.Errorf("ParseTypeRef unexpected error: %v", typeRefResult.Err)
 				return
 			}
-			
+
 			require.Equal(t, baseResult.Output.TypeRefType(), typeRefResult.Output.TypeRefType())
 			require.Equal(t, baseResult.Remaining, typeRefResult.Remaining)
 		})

@@ -18,42 +18,37 @@ func TestParseArrayTypes(t *testing.T) {
 		expected interface{}
 	}{
 		{
-			name:    "short array [8]",
-			typeStr: "short[8]",
-			data:    []byte{0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, 0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08},
+			name:     "short array [8]",
+			typeStr:  "short[8]",
+			data:     []byte{0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, 0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08},
 			expected: []interface{}{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6), int64(7), int64(8)},
 		},
 		{
-			name:    "long array [4]",
-			typeStr: "long[4]",
-			data:    []byte{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x04},
+			name:     "long array [4]",
+			typeStr:  "long[4]",
+			data:     []byte{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x04},
 			expected: []interface{}{int64(1), int64(2), int64(3), int64(4)},
 		},
 		{
-			name:    "boolean array [3]",
-			typeStr: "boolean[3]",
-			data:    []byte{0x01, 0x00, 0x01},
+			name:     "boolean array [3]",
+			typeStr:  "boolean[3]",
+			data:     []byte{0x01, 0x00, 0x01},
 			expected: []interface{}{true, false, true},
 		},
 		{
-			name:    "unsigned short array [2]",
-			typeStr: "unsigned short[2]",
-			data:    []byte{0x00, 0x01, 0x00, 0x02},
+			name:     "unsigned short array [2]",
+			typeStr:  "unsigned short[2]",
+			data:     []byte{0x00, 0x01, 0x00, 0x02},
 			expected: []interface{}{int64(1), int64(2)},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			// 解析类型
 			typeResult := typeref.ParseTypeRef(test.typeStr)
 			require.Nil(t, typeResult.Err)
 			require.Equal(t, typ.ArrayType, typeResult.Output.TypeRefType())
-
-			// 创建 converter
 			converter := createTestConverter(false) // big endian
-
-			// 解析数据
 			result, remain, err := converter.parseDataByType(test.data, typeResult.Output, ast.Module{})
 			require.NoError(t, err)
 			require.Equal(t, test.expected, result)
@@ -70,15 +65,15 @@ func TestParseArrayTypesLittleEndian(t *testing.T) {
 		expected interface{}
 	}{
 		{
-			name:    "short array [4] little endian",
-			typeStr: "short[4]",
-			data:    []byte{0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00},
+			name:     "short array [4] little endian",
+			typeStr:  "short[4]",
+			data:     []byte{0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00},
 			expected: []interface{}{int64(1), int64(2), int64(3), int64(4)},
 		},
 		{
-			name:    "long array [2] little endian",
-			typeStr: "long[2]",
-			data:    []byte{0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00},
+			name:     "long array [2] little endian",
+			typeStr:  "long[2]",
+			data:     []byte{0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00},
 			expected: []interface{}{int64(1), int64(2)},
 		},
 	}
@@ -89,11 +84,7 @@ func TestParseArrayTypesLittleEndian(t *testing.T) {
 			typeResult := typeref.ParseTypeRef(test.typeStr)
 			require.Nil(t, typeResult.Err)
 			require.Equal(t, typ.ArrayType, typeResult.Output.TypeRefType())
-
-			// 创建 converter
 			converter := createTestConverter(true) // little endian
-
-			// 解析数据
 			result, remain, err := converter.parseDataByType(test.data, typeResult.Output, ast.Module{})
 			require.NoError(t, err)
 			require.Equal(t, test.expected, result)
