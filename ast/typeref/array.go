@@ -7,7 +7,6 @@ import (
 	"github.com/yisaer/idl-parser/ast/utils"
 )
 
-// ArrayType 表示一个数组类型，包装了基础类型和数组大小
 type ArrayType struct {
 	InnerType TypeRef `json:"inner_type"`
 	ArraySize int     `json:"array_size"`
@@ -28,9 +27,8 @@ func (t ArrayType) TypeRefType() typ.FieldRefType {
 	return typ.ArrayType
 }
 
-// ParseArray 解析数组格式的类型，如 "short[8]", "long[16]" 等
+// ParseArray
 func ParseArray(code string) gomme.Result[ArrayType, string] {
-	// 首先尝试解析基础类型
 	baseTypeResult := ParseBaseType(code)
 	if baseTypeResult.Err != nil {
 		return gomme.Result[ArrayType, string]{Err: baseTypeResult.Err}
@@ -39,9 +37,7 @@ func ParseArray(code string) gomme.Result[ArrayType, string] {
 	baseType := baseTypeResult.Output
 	remaining := baseTypeResult.Remaining
 
-	// 检查是否还有数组后缀
 	if len(remaining) > 0 && remaining[0] == '[' {
-		// 解析数组大小
 		arraySizeResult := gomme.Delimited(
 			gomme.Token[string]("["),
 			utils.ParseDigit,
@@ -59,13 +55,12 @@ func ParseArray(code string) gomme.Result[ArrayType, string] {
 		}
 	}
 
-	// 如果没有数组后缀，返回错误（因为这是 ParseArray 函数）
 	return gomme.Result[ArrayType, string]{
 		Err: gomme.NewError("expected array format"),
 	}
 }
 
-// ParseBaseType 解析基础类型（不包含数组）
+// ParseBaseType
 func ParseBaseType(code string) gomme.Result[TypeRef, string] {
 	return gomme.Alternative(
 		gomme.Map(ParseSequence, func(seq Sequence) (TypeRef, error) { return seq, nil }),
