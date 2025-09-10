@@ -34,25 +34,32 @@ func parseField(code string) gomme.Result[Field, string] {
 	var annotationsParser gomme.Parser[string, annotation.Annotations] = annotation.ParseAnnotations
 	var optionalWhitespace gomme.Parser[string, string] = gomme.Whitespace0[string]()
 	return gomme.Map(
-		gomme.SeparatedPair(
-			gomme.Optional(annotationsParser),
-			optionalWhitespace,
+		gomme.Pair(
 			gomme.SeparatedPair(
-				typeRefParser,
-				gomme.Whitespace1[string](),
-				gomme.Recognize(
-					utils.ParseValidChar,
+				gomme.Optional(annotationsParser),
+				optionalWhitespace,
+				gomme.SeparatedPair(
+					typeRefParser,
+					gomme.Whitespace1[string](),
+					gomme.Recognize(
+						utils.ParseValidChar,
+					),
 				),
 			),
+			gomme.Pair(
+				gomme.Whitespace0[string](),
+				gomme.Token[string](";"),
+			),
 		),
-		func(output gomme.PairContainer[annotation.Annotations, gomme.PairContainer[typeref.TypeRef, string]]) (Field, error) {
-			if len(output.Left) < 1 {
-				output.Left = nil
+		func(output gomme.PairContainer[gomme.PairContainer[annotation.Annotations, gomme.PairContainer[typeref.TypeRef, string]], gomme.PairContainer[string, string]]) (Field, error) {
+			fieldData := output.Left
+			if len(fieldData.Left) < 1 {
+				fieldData.Left = nil
 			}
 			return Field{
-				Annotations: output.Left,
-				Type:        output.Right.Left,
-				Name:        output.Right.Right,
+				Annotations: fieldData.Left,
+				Type:        fieldData.Right.Left,
+				Name:        fieldData.Right.Right,
 			}, nil
 		},
 	)(code)
@@ -73,11 +80,8 @@ func Parse(code string) gomme.Result[Struct, string] {
 	fieldsResult := utils.InEmpty(
 		gomme.Delimited(
 			utils.InEmpty(gomme.Token[string]("{")),
-			gomme.SeparatedList0(parseField, utils.InEmpty(gomme.Token[string](";"))),
-			gomme.Pair(
-				gomme.Optional(utils.InEmpty(gomme.Token[string](";"))),
-				utils.InEmpty(gomme.Token[string]("}")),
-			),
+			gomme.SeparatedList0(parseField, gomme.Whitespace0[string]()),
+			utils.InEmpty(gomme.Token[string]("}")),
 		))(nameResult.Remaining)
 	if fieldsResult.Err != nil {
 		return gomme.Failure[string, Struct](fieldsResult.Err, code)
