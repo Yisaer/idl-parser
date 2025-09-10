@@ -23,13 +23,7 @@ func (t OctetType) TypeName() string {
 	return t.SelfType
 }
 
-// ParseOctet 解析 octet 类型（现在只支持基础格式，数组格式由通用解析器处理）
 func ParseOctet(code string) gomme.Result[OctetType, string] {
-	return ParsePlainOctet(code)
-}
-
-// ParsePlainOctet 解析纯 octet 类型（不包含数组）
-func ParsePlainOctet(code string) gomme.Result[OctetType, string] {
 	return gomme.Map(
 		gomme.Token[string]("octet"),
 		func(token string) (OctetType, error) {

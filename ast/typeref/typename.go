@@ -31,11 +31,6 @@ func (t TypeName) TypeName() string {
 
 // ParseTypeName 解析类型名（现在只支持基础格式，数组格式由通用解析器处理）
 func ParseTypeName(code string) gomme.Result[TypeName, string] {
-	return ParsePlainTypeName(code)
-}
-
-// ParsePlainTypeName 解析纯类型名（不包含数组）
-func ParsePlainTypeName(code string) gomme.Result[TypeName, string] {
 	// Parse the identifier (type name)
 	identifierResult := gomme.Recognize(
 		utils.ParseValidChar,

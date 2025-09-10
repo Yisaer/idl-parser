@@ -69,7 +69,7 @@ func ParseArray(code string) gomme.Result[ArrayType, string] {
 func ParseBaseType(code string) gomme.Result[TypeRef, string] {
 	return gomme.Alternative(
 		gomme.Map(ParseSequence, func(seq Sequence) (TypeRef, error) { return seq, nil }),
-		gomme.Map(ParsePlainOctet, func(octet OctetType) (TypeRef, error) { return octet, nil }),
+		gomme.Map(ParseOctet, func(octet OctetType) (TypeRef, error) { return octet, nil }),
 		gomme.Map(ParseShort, func(short ShortType) (TypeRef, error) { return short, nil }),
 		gomme.Map(ParseUnsignedShort, func(us UnsignedShortType) (TypeRef, error) { return us, nil }),
 		gomme.Map(ParseLongLong, func(longlong LongLongType) (TypeRef, error) { return longlong, nil }),
@@ -80,6 +80,6 @@ func ParseBaseType(code string) gomme.Result[TypeRef, string] {
 		gomme.Map(ParseFloat, func(f FloatType) (TypeRef, error) { return f, nil }),
 		gomme.Map(ParseString, func(s StringType) (TypeRef, error) { return s, nil }),
 		gomme.Map(ParseBitField, func(bitfield BitFieldType) (TypeRef, error) { return bitfield, nil }),
-		gomme.Map(ParsePlainTypeName, func(name TypeName) (TypeRef, error) { return name, nil }),
+		gomme.Map(ParseTypeName, func(name TypeName) (TypeRef, error) { return name, nil }),
 	)(code)
 }
