@@ -153,6 +153,7 @@ var (
 		typ.SequenceType,
 		typ.StringType,
 		typ.SelfDefinedTypeType,
+		typ.ArrayType,
 	}
 )
 
@@ -257,7 +258,7 @@ func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, modu
 	var err error
 	var v interface{}
 	result := make([]interface{}, 0, arrayType.ArraySize)
-	
+
 	for i := 0; i < arrayType.ArraySize; i++ {
 		v, remained, err = c.parseDataByType(remained, arrayType.InnerType, module)
 		if err != nil {

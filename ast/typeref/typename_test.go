@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/yisaer/idl-parser/ast/typ"
 )
 
 func TestParseTypeName(t *testing.T) {
@@ -23,6 +25,45 @@ func TestParseTypeName(t *testing.T) {
 			expectedRemain: "",
 			expectError:    false,
 		},
+		{
+			name:           "parse type name with remaining text",
+			input:          "idbits id;",
+			expectedName:   "idbits",
+			expectedSize:   0,
+			expectedRemain: " id;",
+			expectError:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ParseTypeName(tt.input)
+
+			if tt.expectError {
+				require.Error(t, result.Err)
+			} else {
+				if result.Err != nil {
+					t.Errorf("Unexpected error: %v", result.Err)
+					return
+				}
+				require.Equal(t, tt.expectedName, result.Output.Name)
+				require.Equal(t, tt.expectedName, result.Output.SelfType)
+				require.Equal(t, tt.expectedSize, result.Output.ArraySize)
+				require.Equal(t, tt.expectedRemain, result.Remaining)
+			}
+		})
+	}
+}
+
+func TestParseTypeNameArrayViaTypeRef(t *testing.T) {
+	tests := []struct {
+		name           string
+		input          string
+		expectedName   string
+		expectedSize   int
+		expectedRemain string
+		expectError    bool
+	}{
 		{
 			name:           "parse type name with array size",
 			input:          "idbits[8]",
@@ -48,19 +89,11 @@ func TestParseTypeName(t *testing.T) {
 			expectError:    false,
 		},
 		{
-			name:           "parse type name with remaining text",
-			input:          "idbits id;",
-			expectedName:   "idbits",
-			expectedSize:   0,
-			expectedRemain: " id;",
-			expectError:    false,
-		},
-		{
 			name:           "parse type name array with remaining text",
-			input:          "idbits[8] id;",
+			input:          "idbits[8] some other text",
 			expectedName:   "idbits",
 			expectedSize:   8,
-			expectedRemain: " id;",
+			expectedRemain: " some other text",
 			expectError:    false,
 		},
 		{
@@ -69,7 +102,7 @@ func TestParseTypeName(t *testing.T) {
 			expectedName:   "",
 			expectedSize:   0,
 			expectedRemain: "",
-			expectError:    true, // Should return error when brackets are not properly closed
+			expectError:    true,
 		},
 		{
 			name:           "parse invalid array format - non-digit in brackets",
@@ -77,26 +110,34 @@ func TestParseTypeName(t *testing.T) {
 			expectedName:   "",
 			expectedSize:   0,
 			expectedRemain: "",
-			expectError:    true, // Should return error when brackets contain non-digits
+			expectError:    true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ParseTypeName(tt.input)
+			result := ParseTypeRef(tt.input)
 
 			if tt.expectError {
 				require.Error(t, result.Err)
-			} else {
-				if result.Err != nil {
-					t.Errorf("Unexpected error: %v", result.Err)
-					return
-				}
-				require.Equal(t, tt.expectedName, result.Output.Name)
-				require.Equal(t, tt.expectedName, result.Output.SelfType)
-				require.Equal(t, tt.expectedSize, result.Output.ArraySize)
-				require.Equal(t, tt.expectedRemain, result.Remaining)
+				return
 			}
+
+			if result.Err != nil {
+				t.Errorf("Unexpected error: %v", result.Err)
+				return
+			}
+			require.Equal(t, typ.ArrayType, result.Output.TypeRefType())
+			
+			arrayType, ok := result.Output.(ArrayType)
+			require.True(t, ok)
+			
+			typeName, ok := arrayType.InnerType.(TypeName)
+			require.True(t, ok)
+			
+			require.Equal(t, tt.expectedName, typeName.Name)
+			require.Equal(t, tt.expectedSize, arrayType.ArraySize)
+			require.Equal(t, tt.expectedRemain, result.Remaining)
 		})
 	}
 }
