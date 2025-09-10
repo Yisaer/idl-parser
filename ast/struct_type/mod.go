@@ -65,7 +65,7 @@ func Parse(code string) gomme.Result[Struct, string] {
 	}
 	nameResult :=
 		utils.InEmpty(
-			gomme.Recognize(gomme.Pair(gomme.Alpha1[string](), gomme.Alphanumeric0[string]())),
+			gomme.Recognize(utils.ParseValidChar),
 		)(structTokenResult.Remaining)
 	if nameResult.Err != nil {
 		return gomme.Failure[string, Struct](nameResult.Err, code)

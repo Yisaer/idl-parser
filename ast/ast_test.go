@@ -164,6 +164,14 @@ func TestModuleJson(t *testing.T) {
 					}`,
 			expected: `{"name":"spi","content":[{"name":"CANFrame","fields":[{"annotations":[{"name":"format","values":{"a":"b","c":"123"}}],"type":{"self_type":"octet"},"name":"header"}],"type":"Struct"}],"type":"Module"}`,
 		},
+		{
+			input: `module spi {
+						struct message_123 {
+							@format(a="b",c=123) octet header;
+						};
+					}`,
+			expected: `{"name":"spi","content":[{"name":"message_123","fields":[{"annotations":[{"name":"format","values":{"a":"b","c":"123"}}],"type":{"self_type":"octet"},"name":"header"}],"type":"Struct"}],"type":"Module"}`,
+		},
 	}
 	for _, test := range tests {
 		result := Parse(test.input)

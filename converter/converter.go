@@ -14,17 +14,12 @@ import (
 
 type IDLConverter struct {
 	IsLittleEndian bool
-	SchemaID       string
 	SchemaPath     string
 	Module         ast.Module
-	list           *list.List
-	tarStruct      struct_type.Struct
-	belongModule   ast.Module
 }
 
-func NewIDLConverter(schemaID string, schemaPath string, isLittleEndian bool) (*IDLConverter, error) {
+func NewIDLConverter(schemaPath string, isLittleEndian bool) (*IDLConverter, error) {
 	c := &IDLConverter{
-		SchemaID:       schemaID,
 		SchemaPath:     schemaPath,
 		IsLittleEndian: isLittleEndian,
 	}
@@ -44,10 +39,6 @@ func (c *IDLConverter) init() error {
 		return res.Err
 	}
 	c.Module = res.Output
-	c.list = list.New()
-	if err := c.travelModule(); err != nil {
-		return err
-	}
 	if err := c.verifyModule(c.Module); err != nil {
 		return err
 	}
@@ -57,10 +48,11 @@ func (c *IDLConverter) init() error {
 	return nil
 }
 
-func (c *IDLConverter) travelModule() error {
-	nodes := strings.Split(c.SchemaID, ".")
+func (c *IDLConverter) travelModule(targetSchemaID string) (*struct_type.Struct, *ast.Module, error) {
+	linkList := list.New()
+	nodes := strings.Split(targetSchemaID, ".")
 	for _, node := range nodes {
-		c.list.PushBack(node)
+		linkList.PushBack(node)
 	}
 	mockRootModule := ast.Module{
 		Name: "header",
@@ -69,35 +61,33 @@ func (c *IDLConverter) travelModule() error {
 		},
 		Type: "module",
 	}
-	return c.travel(c.list.Front(), mockRootModule)
+	return c.travel(linkList.Front(), mockRootModule)
 }
 
-func (c *IDLConverter) travel(curr *list.Element, currModule ast.Module) error {
+func (c *IDLConverter) travel(curr *list.Element, currModule ast.Module) (*struct_type.Struct, *ast.Module, error) {
 	node := curr.Value.(string)
 	if curr.Next() == nil {
 		for _, con := range currModule.Content {
 			if con.GetName() == node {
 				st, ok := con.(struct_type.Struct)
 				if !ok {
-					return fmt.Errorf("travel node %v not struct", node)
+					return nil, nil, fmt.Errorf("travel node %v not struct", node)
 				}
-				c.tarStruct = st
-				c.belongModule = currModule
-				return nil
+				return &st, &currModule, nil
 			}
 		}
-		return fmt.Errorf("travel node %v not found", node)
+		return nil, nil, fmt.Errorf("travel node %v not found", node)
 	}
 	for _, con := range currModule.Content {
 		if con.GetName() == node {
 			module, ok := con.(ast.Module)
 			if !ok {
-				return fmt.Errorf("travel node %v not module", node)
+				return nil, nil, fmt.Errorf("travel node %v not module", node)
 			}
 			return c.travel(curr.Next(), module)
 		}
 	}
-	return fmt.Errorf("travel node %v not found", node)
+	return nil, nil, fmt.Errorf("travel node %v not found", node)
 }
 
 func (c *IDLConverter) verifyModule(module ast.Module) error {
@@ -175,8 +165,12 @@ func isSupportedTyp(tar typ.FieldRefType) bool {
 	return false
 }
 
-func (c *IDLConverter) Decode(data []byte) (map[string]interface{}, error) {
-	v, _, err := parseBytesToStruct(data, c.tarStruct, c.belongModule, c)
+func (c *IDLConverter) Decode(schemaID string, data []byte) (map[string]interface{}, error) {
+	targetSts, targetModule, err := c.travelModule(schemaID)
+	if err != nil {
+		return nil, err
+	}
+	v, _, err := parseBytesToStruct(data, *targetSts, *targetModule, c)
 	return v, err
 }
 
