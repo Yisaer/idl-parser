@@ -101,3 +101,13 @@ func TestParseStructSequence(t *testing.T) {
 	result := Parse(code)
 	require.Nil(t, result.Err)
 }
+
+func TestParseStructFieldWithoutSemicolon(t *testing.T) {
+	code := `struct AB {
+	   	octet id1;
+        octet id2
+	}`
+	result := Parse(code)
+	require.NotNil(t, result.Err)
+	require.Contains(t, result.Err.Error(), "Token")
+}

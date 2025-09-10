@@ -2,6 +2,7 @@ package converter
 
 import (
 	"encoding/binary"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,6 +12,12 @@ import (
 	"github.com/yisaer/idl-parser/ast/typeref"
 )
 
+func TestConverterErr(t *testing.T) {
+	_, err := NewIDLConverter("./testdata/test_error.idl", false)
+	require.Error(t, err)
+	fmt.Println(err.Error())
+}
+
 // createTestConverter 创建用于测试的 IDLConverter 实例
 func createTestConverter(isLittleEndian bool) *IDLConverter {
 	return &IDLConverter{
@@ -19,24 +26,24 @@ func createTestConverter(isLittleEndian bool) *IDLConverter {
 }
 
 func TestConverterStsDecode(t *testing.T) {
-	_, err := NewIDLConverter("a.Target", "./testdata/test_sts.idl", false)
+	_, err := NewIDLConverter("./testdata/test_sts.idl", false)
 	require.NoError(t, err)
 }
 
 func TestConverterDecode(t *testing.T) {
-	c, err := NewIDLConverter("a.b.c", "./testdata/test.idl", false)
+	c, err := NewIDLConverter("./testdata/test.idl", false)
 	require.NoError(t, err)
 	testdata := []byte{41, 42}
-	m, err := c.Decode(testdata)
+	m, err := c.Decode("a.b.c", testdata)
 	require.NoError(t, err)
 	require.Equal(t, map[string]interface{}{"id1": int64(41), "id2": int64(42)}, m)
 }
 
 func TestConverterDecodeLittleEndian(t *testing.T) {
-	c, err := NewIDLConverter("a.b.c", "./testdata/test.idl", true)
+	c, err := NewIDLConverter("./testdata/test.idl", true)
 	require.NoError(t, err)
 	testdata := []byte{41, 42}
-	m, err := c.Decode(testdata)
+	m, err := c.Decode("a.b.c", testdata)
 	require.NoError(t, err)
 	require.Equal(t, map[string]interface{}{"id1": int64(41), "id2": int64(42)}, m)
 }
@@ -95,7 +102,7 @@ func TestParseDataByType_Octet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			octetType := typeref.NewOctetType()
 			converter := createTestConverter(tt.isLittleEndian)
-			result, remain, err := parseDataByType(tt.data, octetType, ast.Module{}, converter)
+			result, remain, err := converter.parseDataByType(tt.data, octetType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -174,7 +181,7 @@ func TestParseDataByType_SequenceOfOctet(t *testing.T) {
 			sequenceType := typeref.NewSequence(octetType)
 			converter := createTestConverter(tt.isLittleEndian)
 
-			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{}, converter)
+			result, remain, err := converter.parseDataByType(tt.data, sequenceType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -192,7 +199,7 @@ func TestParseDataByType_UnsupportedType(t *testing.T) {
 	mockType := &mockUnsupportedType{}
 	converter := createTestConverter(false)
 
-	result, remain, err := parseDataByType([]byte{1, 2, 3}, mockType, ast.Module{}, converter)
+	result, remain, err := converter.parseDataByType([]byte{1, 2, 3}, mockType, ast.Module{})
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unsupported type")
@@ -271,7 +278,7 @@ func TestParseDataByType_Short(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			shortType := typeref.NewShortType()
 			converter := createTestConverter(tt.isLittleEndian)
-			result, remain, err := parseDataByType(tt.data, shortType, ast.Module{}, converter)
+			result, remain, err := converter.parseDataByType(tt.data, shortType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -332,7 +339,7 @@ func TestParseDataByType_UnsignedShort(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			unsignedShortType := typeref.NewUnsignedShortType()
 			converter := createTestConverter(tt.isLittleEndian)
-			result, remain, err := parseDataByType(tt.data, unsignedShortType, ast.Module{}, converter)
+			result, remain, err := converter.parseDataByType(tt.data, unsignedShortType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -393,7 +400,7 @@ func TestParseDataByType_Long(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			longType := typeref.NewLongType()
 			converter := createTestConverter(tt.isLittleEndian)
-			result, remain, err := parseDataByType(tt.data, longType, ast.Module{}, converter)
+			result, remain, err := converter.parseDataByType(tt.data, longType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -442,7 +449,7 @@ func TestParseDataByType_UnsignedLong(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			unsignedLongType := typeref.NewUnsignedLong()
 			converter := createTestConverter(false)
-			result, remain, err := parseDataByType(tt.data, unsignedLongType, ast.Module{}, converter)
+			result, remain, err := converter.parseDataByType(tt.data, unsignedLongType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -491,7 +498,7 @@ func TestParseDataByType_LongLong(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			longLongType := typeref.NewLongLongType()
 			converter := createTestConverter(false)
-			result, remain, err := parseDataByType(tt.data, longLongType, ast.Module{}, converter)
+			result, remain, err := converter.parseDataByType(tt.data, longLongType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -540,7 +547,7 @@ func TestParseDataByType_UnsignedLongLong(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			unsignedLongLongType := typeref.NewUnsignedLongLong()
 			converter := createTestConverter(false)
-			result, remain, err := parseDataByType(tt.data, unsignedLongLongType, ast.Module{}, converter)
+			result, remain, err := converter.parseDataByType(tt.data, unsignedLongLongType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -596,7 +603,7 @@ func TestParseDataByType_Boolean(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			booleanType := typeref.NewBooleanType()
 			converter := createTestConverter(false)
-			result, remain, err := parseDataByType(tt.data, booleanType, ast.Module{}, converter)
+			result, remain, err := converter.parseDataByType(tt.data, booleanType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -665,7 +672,7 @@ func TestParseDataByType_Float(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			floatType := typeref.NewFloatType()
 			converter := createTestConverter(tt.isLittleEndian)
-			result, remain, err := parseDataByType(tt.data, floatType, ast.Module{}, converter)
+			result, remain, err := converter.parseDataByType(tt.data, floatType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -716,7 +723,7 @@ func TestParseDataByType_SequenceOfShort(t *testing.T) {
 			sequenceType := typeref.NewSequence(shortType)
 			converter := createTestConverter(false)
 
-			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{}, converter)
+			result, remain, err := converter.parseDataByType(tt.data, sequenceType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -767,7 +774,7 @@ func TestParseDataByType_SequenceOfBoolean(t *testing.T) {
 			sequenceType := typeref.NewSequence(booleanType)
 			converter := createTestConverter(false)
 
-			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{}, converter)
+			result, remain, err := converter.parseDataByType(tt.data, sequenceType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -837,7 +844,7 @@ func TestParseDataByType_String(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			stringType := typeref.NewStringType()
 			converter := createTestConverter(false)
-			result, remain, err := parseDataByType(tt.data, stringType, ast.Module{}, converter)
+			result, remain, err := converter.parseDataByType(tt.data, stringType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -916,7 +923,7 @@ func TestParseDataByType_SequenceOfString(t *testing.T) {
 			sequenceType := typeref.NewSequence(stringType)
 			converter := createTestConverter(false)
 
-			result, remain, err := parseDataByType(tt.data, sequenceType, ast.Module{}, converter)
+			result, remain, err := converter.parseDataByType(tt.data, sequenceType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -933,7 +940,7 @@ func TestParseDataByType_SequenceOfString(t *testing.T) {
 func TestConverterDecodeComplexStruct(t *testing.T) {
 	// 测试大端序
 	t.Run("big endian", func(t *testing.T) {
-		c, err := NewIDLConverter("a.b.complex", "./testdata/test_complex.idl", false)
+		c, err := NewIDLConverter("./testdata/test_complex.idl", false)
 		require.NoError(t, err)
 
 		// 大端序数据：short(12345), long(1234567890), float(3.14), sequence[1,2,3], string("test")
@@ -947,7 +954,7 @@ func TestConverterDecodeComplexStruct(t *testing.T) {
 			't', 'e', 's', 't', // string: "test"
 		}
 
-		m, err := c.Decode(testdata)
+		m, err := c.Decode("a.b.complex", testdata)
 		require.NoError(t, err)
 		require.Equal(t, int64(12345), m["id"])
 		require.Equal(t, int64(1234567890), m["timestamp"])
@@ -958,7 +965,7 @@ func TestConverterDecodeComplexStruct(t *testing.T) {
 
 	// 测试小端序
 	t.Run("little endian", func(t *testing.T) {
-		c, err := NewIDLConverter("a.b.complex", "./testdata/test_complex.idl", true)
+		c, err := NewIDLConverter("./testdata/test_complex.idl", true)
 		require.NoError(t, err)
 
 		// 小端序数据：short(12345), long(1234567890), float(3.14), sequence[1,2,3], string("test")
@@ -972,7 +979,7 @@ func TestConverterDecodeComplexStruct(t *testing.T) {
 			't', 'e', 's', 't', // string: "test"
 		}
 
-		m, err := c.Decode(testdata)
+		m, err := c.Decode("a.b.complex", testdata)
 		require.NoError(t, err)
 		require.Equal(t, int64(12345), m["id"])
 		require.Equal(t, int64(1234567890), m["timestamp"])
@@ -985,7 +992,7 @@ func TestConverterDecodeComplexStruct(t *testing.T) {
 func TestConverterDecodeComplexStructMixedEndian(t *testing.T) {
 	// 测试混合字节序的情况（虽然实际使用中不常见，但测试边界情况）
 	t.Run("mixed endian edge case", func(t *testing.T) {
-		c, err := NewIDLConverter("a.b.complex", "./testdata/test_complex.idl", true)
+		c, err := NewIDLConverter("./testdata/test_complex.idl", true)
 		require.NoError(t, err)
 
 		// 小端序数据，但包含一些边界值
@@ -1000,7 +1007,7 @@ func TestConverterDecodeComplexStructMixedEndian(t *testing.T) {
 			// 字符串数据为空（长度为0）
 		}
 
-		m, err := c.Decode(testdata)
+		m, err := c.Decode("a.b.complex", testdata)
 		require.NoError(t, err)
 		require.Equal(t, int64(32767), m["id"])
 		require.Equal(t, int64(2147483647), m["timestamp"])

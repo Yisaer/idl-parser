@@ -29,8 +29,9 @@ func (t TypeName) TypeName() string {
 	return t.Name
 }
 
+// ParseTypeName 解析类型名（现在只支持基础格式，数组格式由通用解析器处理）
 func ParseTypeName(code string) gomme.Result[TypeName, string] {
-	// First, parse the identifier (type name)
+	// Parse the identifier (type name)
 	identifierResult := gomme.Recognize(
 		utils.ParseValidChar,
 	)(code)
@@ -42,34 +43,6 @@ func ParseTypeName(code string) gomme.Result[TypeName, string] {
 	typeName := identifierResult.Output
 	remaining := identifierResult.Remaining
 
-	// Check if the remaining code starts with "["
-	if len(remaining) > 0 && remaining[0] == '[' {
-		// Try to parse as array format
-		arrayResult := gomme.Map(
-			gomme.Pair(
-				gomme.Token[string](typeName),
-				gomme.Delimited(
-					gomme.Token[string]("["),
-					utils.ParseDigit,
-					gomme.Token[string]("]"),
-				),
-			),
-			func(output gomme.PairContainer[string, int]) (TypeName, error) {
-				return NewTypeNameArrayType(output.Left, output.Right), nil
-			},
-		)(code)
-
-		// If array parsing succeeded, return it
-		if arrayResult.Err == nil {
-			return arrayResult
-		}
-
-		// If we started with "[" but parsing failed, return the error
-		// This ensures that idbits[abc] will return an error instead of falling back
-		return arrayResult
-	}
-
-	// Otherwise, return plain type name
 	return gomme.Result[TypeName, string]{
 		Output:    NewTypeName(typeName),
 		Remaining: remaining,
