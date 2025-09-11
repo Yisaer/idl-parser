@@ -17,17 +17,17 @@ const (
 )
 
 // detectEncodingFromBOM 通过BOM探测编码
-func detectEncodingFromBOM(data []byte) (StringEncoding, int) {
+func detectEncodingFromBOM(data []byte) (StringEncoding, int, error) {
 	if len(data) >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF {
-		return EncodingUTF8, 3
+		return EncodingUTF8, 3, nil
 	}
 	if len(data) >= 2 && data[0] == 0xFE && data[1] == 0xFF {
-		return EncodingUTF16BE, 2
+		return EncodingUTF16BE, 2, nil
 	}
 	if len(data) >= 2 && data[0] == 0xFF && data[1] == 0xFE {
-		return EncodingUTF16LE, 2
+		return EncodingUTF16LE, 2, nil
 	}
-	return EncodingUnknown, 0
+	return EncodingUnknown, 0, errors.New("unknown encoding: no valid BOM found")
 }
 
 // getTerminatorLength 获取终止符长度
@@ -149,11 +149,9 @@ func parseDynamicStringContent(data []byte) (string, error) {
 	}
 
 	// 1. 检测BOM确定编码方式
-	encoding, bomLen := detectEncodingFromBOM(data)
-	if encoding == EncodingUnknown {
-		// 无BOM，尝试推断编码
-		encoding = inferEncodingFromContent(data)
-		bomLen = 0
+	encoding, bomLen, err := detectEncodingFromBOM(data)
+	if err != nil {
+		return "", err
 	}
 
 	// 2. 提取字符串内容（去除BOM和终止符）
@@ -182,52 +180,6 @@ func parseDynamicStringContent(data []byte) (string, error) {
 	return convertBytesToString(contentBytes, encoding)
 }
 
-// inferEncodingFromContent 从内容推断编码方式
-func inferEncodingFromContent(data []byte) StringEncoding {
-	if len(data) < 2 {
-		return EncodingUTF8
-	}
-
-	// 检查是否为UTF-16模式
-	// UTF-16BE: 高字节在前，低字节在后，且低字节通常为0x00（ASCII字符）
-	// UTF-16LE: 低字节在前，高字节在后，且高字节通常为0x00（ASCII字符）
-
-	// 检查前几个字符的模式
-	utf16BECount := 0
-	utf16LECount := 0
-
-	// 检查前几个字符（最多检查前20个字节）
-	maxCheck := len(data)
-	if maxCheck > 20 {
-		maxCheck = 20
-	}
-
-	for i := 0; i < maxCheck-1; i += 2 {
-		if i+1 >= len(data) {
-			break
-		}
-
-		// UTF-16BE模式：高字节非零，低字节为零（ASCII字符）
-		if data[i] != 0x00 && data[i+1] == 0x00 {
-			utf16BECount++
-		}
-		// UTF-16LE模式：低字节非零，高字节为零（ASCII字符）
-		if data[i+1] != 0x00 && data[i] == 0x00 {
-			utf16LECount++
-		}
-	}
-
-	// 根据模式数量判断编码
-	if utf16BECount > utf16LECount {
-		return EncodingUTF16BE
-	}
-	if utf16LECount > utf16BECount {
-		return EncodingUTF16LE
-	}
-
-	// 默认返回UTF-8
-	return EncodingUTF8
-}
 
 // ParseBytesToDynamicString 使用可配置的长度字段解析动态字符串
 func (c *IDLConverter) ParseBytesToDynamicString(data []byte) (value string, remained []byte, err error) {
@@ -262,9 +214,9 @@ func (c *IDLConverter) ParseBytesToFixedLengthString(data []byte, fixedLength in
 	}
 
 	// 1. 检测BOM确定编码方式
-	encoding, bomLen := detectEncodingFromBOM(data)
-	if encoding == EncodingUnknown {
-		return "", nil, errors.New("fixed-length string must start with BOM")
+	encoding, bomLen, err := detectEncodingFromBOM(data)
+	if err != nil {
+		return "", nil, err
 	}
 
 	// 2. 验证固定长度

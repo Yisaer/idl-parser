@@ -170,7 +170,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 
 		_, _, err := converter.ParseBytesToFixedLengthString(testData, 6)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "must start with BOM")
+		require.Contains(t, err.Error(), "unknown encoding: no valid BOM found")
 	})
 
 	t.Run("错误情况_数据不足", func(t *testing.T) {
@@ -305,10 +305,23 @@ func TestParseBytesToDynamicString(t *testing.T) {
 		require.Empty(t, remained)
 	})
 
-	t.Run("空字符串测试", func(t *testing.T) {
-		// 空字符串（只有终止符）
+	t.Run("空字符串测试_应该失败", func(t *testing.T) {
+		// 空字符串（只有终止符，没有BOM）
 		testData := []byte{
 			0x00, 0x00, 0x00, 0x01, // 长度字段 (1字节)
+			0x00, // UTF-8 终止符
+		}
+
+		_, _, err := converter.ParseBytesToDynamicString(testData)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "unknown encoding: no valid BOM found")
+	})
+
+	t.Run("带BOM的空字符串测试", func(t *testing.T) {
+		// 带BOM的空字符串（BOM + 终止符）
+		testData := []byte{
+			0x00, 0x00, 0x00, 0x04, // 长度字段 (4字节)
+			0xEF, 0xBB, 0xBF, // UTF-8 BOM
 			0x00, // UTF-8 终止符
 		}
 
@@ -316,5 +329,32 @@ func TestParseBytesToDynamicString(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "", result)
 		require.Empty(t, remained)
+	})
+
+	t.Run("错误情况_无BOM的动态字符串", func(t *testing.T) {
+		// 没有BOM的动态字符串应该失败
+		testData := []byte{
+			0x00, 0x00, 0x00, 0x06, // 长度字段 (6字节)
+			0x48, 0x65, 0x6C, 0x6C, 0x6F, // "Hello"
+			0x00, // UTF-8 终止符
+		}
+
+		_, _, err := converter.ParseBytesToDynamicString(testData)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "unknown encoding: no valid BOM found")
+	})
+
+	t.Run("错误情况_无效BOM", func(t *testing.T) {
+		// 无效的BOM应该失败
+		testData := []byte{
+			0x00, 0x00, 0x00, 0x08, // 长度字段 (8字节)
+			0xAA, 0xBB, 0xCC, // 无效的BOM
+			0x48, 0x65, 0x6C, 0x6C, 0x6F, // "Hello"
+			0x00, // UTF-8 终止符
+		}
+
+		_, _, err := converter.ParseBytesToDynamicString(testData)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "unknown encoding: no valid BOM found")
 	})
 }
