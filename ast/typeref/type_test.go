@@ -143,13 +143,33 @@ func TestFloat(t *testing.T) {
 func TestString(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected TypeRef
+		expected StringType
 	}{
-		{"string", StringType{SelfType: "string"}},
+		{"string", StringType{SelfType: "string", Length: nil}},
+		{"string<10>", StringType{SelfType: "string", Length: intPtr(10)}},
+		{"string<255>", StringType{SelfType: "string", Length: intPtr(255)}},
+		{"string<1>", StringType{SelfType: "string", Length: intPtr(1)}},
 	}
 
 	for _, test := range tests {
 		result := ParseString(test.input)
-		require.Equal(t, test.expected, result.Output)
+		if result.Err != nil {
+			t.Errorf("ParseString(%s) failed with error: %v", test.input, result.Err)
+			continue
+		}
+		actual := result.Output
+		require.Equal(t, test.expected.SelfType, actual.SelfType)
+
+		if test.expected.Length == nil {
+			require.Nil(t, actual.Length)
+		} else {
+			require.NotNil(t, actual.Length)
+			require.Equal(t, *test.expected.Length, *actual.Length)
+		}
 	}
+}
+
+// intPtr 是一个辅助函数，用于创建 int 指针
+func intPtr(i int) *int {
+	return &i
 }

@@ -319,28 +319,17 @@ func (c *IDLConverter) parseFloat(data []byte, float typeref.FloatType, _ ast.Mo
 	return c.parseBytesToFloat64(data, 4)
 }
 
-func (c *IDLConverter) parseString(data []byte, string typeref.StringType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToString(data)
+func (c *IDLConverter) parseString(data []byte, st typeref.StringType, _ ast.Module) (interface{}, []byte, error) {
+	if st.Length != nil {
+		return ParseBytesToFixedLengthString(data, *st.Length)
+	}
+	return ParseBytesToDynamicStringWithEndian(data, c.IsLittleEndian)
 }
 
 func (c *IDLConverter) parseSelfDefineType(data []byte, definedType typeref.TypeName, module ast.Module) (interface{}, []byte, error) {
 	for _, content := range module.Content {
 		if content.GetName() == definedType.Name && content.ModuleContentType() == typ.StructType {
 			st := content.(struct_type.Struct)
-			if definedType.ArraySize > 0 {
-				remained := data
-				var err error
-				var v map[string]interface{}
-				result := make([]interface{}, 0, definedType.ArraySize)
-				for i := 0; i < definedType.ArraySize; i++ {
-					v, remained, err = c.parseBytesToStruct(remained, st, module)
-					if err != nil {
-						return nil, nil, fmt.Errorf("parse array element %v error:%v", i, err.Error())
-					}
-					result = append(result, v)
-				}
-				return result, remained, nil
-			}
 			return c.parseBytesToStruct(data, st, module)
 		}
 	}
