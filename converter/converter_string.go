@@ -93,9 +93,7 @@ func convertUTF16BytesToString(data []byte, byteOrder binary.ByteOrder) (string,
 	return string(runes), nil
 }
 
-// parseBytesToFixedLengthString 解析定长字符串
-// 根据SOME/IP协议，定长字符串必须以BOM开头，以终止符结束，长度固定
-func parseBytesToFixedLengthString(data []byte, fixedLength int) (value string, remained []byte, err error) {
+func ParseBytesToFixedLengthString(data []byte, fixedLength int) (value string, remained []byte, err error) {
 	if len(data) < fixedLength {
 		return "", nil, errors.New("insufficient data for fixed-length string")
 	}

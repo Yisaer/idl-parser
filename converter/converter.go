@@ -319,8 +319,11 @@ func (c *IDLConverter) parseFloat(data []byte, float typeref.FloatType, _ ast.Mo
 	return c.parseBytesToFloat64(data, 4)
 }
 
-func (c *IDLConverter) parseString(data []byte, string typeref.StringType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToString(data)
+func (c *IDLConverter) parseString(data []byte, st typeref.StringType, _ ast.Module) (interface{}, []byte, error) {
+	if st.Length != nil {
+		return ParseBytesToFixedLengthString(data, *st.Length)
+	}
+	return ParseBytesToDynamicString(data)
 }
 
 func (c *IDLConverter) parseSelfDefineType(data []byte, definedType typeref.TypeName, module ast.Module) (interface{}, []byte, error) {

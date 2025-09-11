@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestParseBytesToFixedLengthString 测试 parseBytesToFixedLengthString 函数的定长字符串解析
+// TestParseBytesToFixedLengthString 测试 ParseBytesToFixedLengthString 函数的定长字符串解析
 func TestParseBytesToFixedLengthString(t *testing.T) {
 	t.Run("UTF-8定长字符串_无填充", func(t *testing.T) {
 		// UTF-8 BOM: EF BB BF
@@ -19,7 +19,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, // UTF-8 终止符
 		}
 
-		result, remained, err := parseBytesToFixedLengthString(testData, 9)
+		result, remained, err := ParseBytesToFixedLengthString(testData, 9)
 		require.NoError(t, err)
 		require.Equal(t, "Hello", result)
 		require.Empty(t, remained)
@@ -38,7 +38,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, 0x00, 0x00, 0x00, // 填充字节
 		}
 
-		result, remained, err := parseBytesToFixedLengthString(testData, 10)
+		result, remained, err := ParseBytesToFixedLengthString(testData, 10)
 		require.NoError(t, err)
 		require.Equal(t, "Hi", result)
 		require.Empty(t, remained)
@@ -56,7 +56,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, 0x00, // UTF-16 终止符
 		}
 
-		result, remained, err := parseBytesToFixedLengthString(testData, 8)
+		result, remained, err := ParseBytesToFixedLengthString(testData, 8)
 		require.NoError(t, err)
 		require.Equal(t, "Go", result)
 		require.Empty(t, remained)
@@ -76,7 +76,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, 0x00, // 填充字节
 		}
 
-		result, remained, err := parseBytesToFixedLengthString(testData, 10)
+		result, remained, err := ParseBytesToFixedLengthString(testData, 10)
 		require.NoError(t, err)
 		require.Equal(t, "Hi", result)
 		require.Empty(t, remained)
@@ -94,7 +94,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, 0x00, // UTF-16 终止符
 		}
 
-		result, remained, err := parseBytesToFixedLengthString(testData, 8)
+		result, remained, err := ParseBytesToFixedLengthString(testData, 8)
 		require.NoError(t, err)
 		require.Equal(t, "Go", result)
 		require.Empty(t, remained)
@@ -114,7 +114,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, 0x00, // 填充字节
 		}
 
-		result, remained, err := parseBytesToFixedLengthString(testData, 10)
+		result, remained, err := ParseBytesToFixedLengthString(testData, 10)
 		require.NoError(t, err)
 		require.Equal(t, "Hi", result)
 		require.Empty(t, remained)
@@ -129,7 +129,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0xFF, 0xFF, 0xFF, // 剩余数据
 		}
 
-		result, remained, err := parseBytesToFixedLengthString(testData, 9)
+		result, remained, err := ParseBytesToFixedLengthString(testData, 9)
 		require.NoError(t, err)
 		require.Equal(t, "Hello", result)
 		require.Equal(t, []byte{0xFF, 0xFF, 0xFF}, remained)
@@ -148,7 +148,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, // UTF-8 终止符
 		}
 
-		result, remained, err := parseBytesToFixedLengthString(testData, 10)
+		result, remained, err := ParseBytesToFixedLengthString(testData, 10)
 		require.NoError(t, err)
 		require.Equal(t, "你好", result)
 		require.Empty(t, remained)
@@ -161,7 +161,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, // UTF-8 终止符
 		}
 
-		_, _, err := parseBytesToFixedLengthString(testData, 6)
+		_, _, err := ParseBytesToFixedLengthString(testData, 6)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "must start with BOM")
 	})
@@ -173,7 +173,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x48, 0x65, // "He"
 		}
 
-		_, _, err := parseBytesToFixedLengthString(testData, 10)
+		_, _, err := ParseBytesToFixedLengthString(testData, 10)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "insufficient data")
 	})
@@ -186,7 +186,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			// 缺少终止符
 		}
 
-		_, _, err := parseBytesToFixedLengthString(testData, 8)
+		_, _, err := ParseBytesToFixedLengthString(testData, 8)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "terminator not found")
 	})

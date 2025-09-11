@@ -26,10 +26,6 @@ func (c *IDLConverter) parseBytesToStruct(data []byte, st struct_type.Struct, mo
 	return m, remained, nil
 }
 
-func (c *IDLConverter) parseBytesToString(data []byte) (value string, remained []byte, err error) {
-	return ParseBytesToDynamicString(data)
-}
-
 func (c *IDLConverter) parseBytesToInt64(data []byte, expLen int) (int64, []byte, error) {
 	if len(data) < expLen {
 		return 0, nil, fmt.Errorf("expect data len %v got len %v", expLen, len(data))
