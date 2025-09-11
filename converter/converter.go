@@ -12,16 +12,20 @@ import (
 	"github.com/yisaer/idl-parser/ast/typeref"
 )
 
-type IDLConverter struct {
-	IsLittleEndian bool
-	SchemaPath     string
-	Module         ast.Module
+type IDlConverterConfig struct {
+	IsLittleEndian    bool
+	LengthFieldLength int // should be 1,2,4 bytes
+	SchemaPath        string
 }
 
-func NewIDLConverter(schemaPath string, isLittleEndian bool) (*IDLConverter, error) {
+type IDLConverter struct {
+	IDlConverterConfig
+	Module ast.Module
+}
+
+func NewIDLConverter(Config IDlConverterConfig) (*IDLConverter, error) {
 	c := &IDLConverter{
-		SchemaPath:     schemaPath,
-		IsLittleEndian: isLittleEndian,
+		IDlConverterConfig: Config,
 	}
 	if err := c.init(); err != nil {
 		return nil, err
