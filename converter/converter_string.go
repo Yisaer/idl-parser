@@ -170,12 +170,21 @@ func removePadding(data []byte, encoding StringEncoding) []byte {
 }
 
 func ParseBytesToDynamicString(data []byte) (value string, remained []byte, err error) {
+	return ParseBytesToDynamicStringWithEndian(data, false) // 默认大端序
+}
+
+func ParseBytesToDynamicStringWithEndian(data []byte, isLittleEndian bool) (value string, remained []byte, err error) {
 	if len(data) < 4 {
 		return "", nil, errors.New("insufficient data for dynamic string length field")
 	}
 
-	// 1. 读取4字节大端序长度字段
-	lengthField := binary.BigEndian.Uint32(data[:4])
+	// 1. 读取4字节长度字段（根据字节序）
+	var lengthField uint32
+	if isLittleEndian {
+		lengthField = binary.LittleEndian.Uint32(data[:4])
+	} else {
+		lengthField = binary.BigEndian.Uint32(data[:4])
+	}
 	stringDataStart := 4
 
 	// 2. 检查是否有足够的数据

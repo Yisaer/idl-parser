@@ -798,28 +798,28 @@ func TestParseDataByType_String(t *testing.T) {
 	}{
 		{
 			name:           "parse string 'hello' successfully",
-			data:           []byte{0, 0, 0, 5, 'h', 'e', 'l', 'l', 'o', 1, 2, 3},
+			data:           []byte{0, 0, 0, 9, 0xEF, 0xBB, 0xBF, 'h', 'e', 'l', 'l', 'o', 0x00, 1, 2, 3},
 			expected:       "hello",
 			expectedRemain: []byte{1, 2, 3},
 			expectError:    false,
 		},
 		{
 			name:           "parse empty string successfully",
-			data:           []byte{0, 0, 0, 0, 100, 200},
+			data:           []byte{0, 0, 0, 4, 0xEF, 0xBB, 0xBF, 0x00, 100, 200},
 			expected:       "",
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
 		},
 		{
 			name:           "parse string with special characters successfully",
-			data:           []byte{0, 0, 0, 3, 'a', 'b', 'c', 10, 20},
+			data:           []byte{0, 0, 0, 7, 0xEF, 0xBB, 0xBF, 'a', 'b', 'c', 0x00, 10, 20},
 			expected:       "abc",
 			expectedRemain: []byte{10, 20},
 			expectError:    false,
 		},
 		{
 			name:           "parse string with unicode characters successfully",
-			data:           []byte{0, 0, 0, 6, 0xE4, 0xB8, 0xAD, 0xE6, 0x96, 0x87, 100, 200},
+			data:           []byte{0, 0, 0, 10, 0xEF, 0xBB, 0xBF, 0xE4, 0xB8, 0xAD, 0xE6, 0x96, 0x87, 0x00, 100, 200},
 			expected:       "中文",
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
@@ -833,7 +833,7 @@ func TestParseDataByType_String(t *testing.T) {
 		},
 		{
 			name:           "should return error when string length correct but data insufficient",
-			data:           []byte{0, 0, 0, 5, 'h', 'e', 'l'},
+			data:           []byte{0, 0, 0, 6, 'h', 'e', 'l'},
 			expected:       "",
 			expectedRemain: nil,
 			expectError:    true,
@@ -868,7 +868,7 @@ func TestParseDataByType_SequenceOfString(t *testing.T) {
 	}{
 		{
 			name:           "parse sequence with 2 string elements",
-			data:           []byte{0, 0, 0, 2, 0, 0, 0, 3, 'a', 'b', 'c', 0, 0, 0, 2, 'x', 'y', 100, 200},
+			data:           []byte{0, 0, 0, 2, 0, 0, 0, 7, 0xEF, 0xBB, 0xBF, 'a', 'b', 'c', 0x00, 0, 0, 0, 6, 0xEF, 0xBB, 0xBF, 'x', 'y', 0x00, 100, 200},
 			expected:       []interface{}{"abc", "xy"},
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
@@ -882,14 +882,14 @@ func TestParseDataByType_SequenceOfString(t *testing.T) {
 		},
 		{
 			name:           "parse sequence with 1 string element",
-			data:           []byte{0, 0, 0, 1, 0, 0, 0, 4, 't', 'e', 's', 't', 100, 200},
+			data:           []byte{0, 0, 0, 1, 0, 0, 0, 8, 0xEF, 0xBB, 0xBF, 't', 'e', 's', 't', 0x00, 100, 200},
 			expected:       []interface{}{"test"},
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
 		},
 		{
 			name:           "parse sequence with empty strings",
-			data:           []byte{0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 100, 200},
+			data:           []byte{0, 0, 0, 2, 0, 0, 0, 4, 0xEF, 0xBB, 0xBF, 0x00, 0, 0, 0, 4, 0xEF, 0xBB, 0xBF, 0x00, 100, 200},
 			expected:       []interface{}{"", ""},
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
@@ -950,8 +950,10 @@ func TestConverterDecodeComplexStruct(t *testing.T) {
 			0x40, 0x48, 0xF5, 0xC3, // float: 3.14 (big endian)
 			0x00, 0x00, 0x00, 0x03, // sequence length: 3 (big endian)
 			0x01, 0x02, 0x03, // sequence data: [1, 2, 3]
-			0x00, 0x00, 0x00, 0x04, // string length: 4 (big endian)
+			0x00, 0x00, 0x00, 0x08, // string length: 8 (big endian) - UTF-8 BOM + "test" + terminator
+			0xEF, 0xBB, 0xBF, // UTF-8 BOM
 			't', 'e', 's', 't', // string: "test"
+			0x00, // UTF-8 terminator
 		}
 
 		m, err := c.Decode("a.b.complex", testdata)
@@ -975,8 +977,10 @@ func TestConverterDecodeComplexStruct(t *testing.T) {
 			0xC3, 0xF5, 0x48, 0x40, // float: 3.14 (little endian)
 			0x03, 0x00, 0x00, 0x00, // sequence length: 3 (little endian)
 			0x01, 0x02, 0x03, // sequence data: [1, 2, 3]
-			0x04, 0x00, 0x00, 0x00, // string length: 4 (little endian)
+			0x08, 0x00, 0x00, 0x00, // string length: 8 (little endian) - UTF-8 BOM + "test" + terminator
+			0xEF, 0xBB, 0xBF, // UTF-8 BOM
 			't', 'e', 's', 't', // string: "test"
+			0x00, // UTF-8 terminator
 		}
 
 		m, err := c.Decode("a.b.complex", testdata)
@@ -996,15 +1000,16 @@ func TestConverterDecodeComplexStructMixedEndian(t *testing.T) {
 		require.NoError(t, err)
 
 		// 小端序数据，但包含一些边界值
-		// 总长度：2(short) + 4(long) + 4(float) + 4(seq_len) + 0(seq_data) + 4(str_len) + 0(str_data) = 22字节
+		// 总长度：2(short) + 4(long) + 4(float) + 4(seq_len) + 0(seq_data) + 4(str_len) + 4(str_data) = 26字节
 		testdata := []byte{
 			0xFF, 0x7F, // short: 32767 (little endian, max positive short)
 			0xFF, 0xFF, 0xFF, 0x7F, // long: 2147483647 (little endian, max positive long)
 			0x00, 0x00, 0x80, 0x3F, // float: 1.0 (little endian)
 			0x00, 0x00, 0x00, 0x00, // sequence length: 0 (little endian)
 			// 序列数据为空（长度为0）
-			0x00, 0x00, 0x00, 0x00, // string length: 0 (little endian)
-			// 字符串数据为空（长度为0）
+			0x04, 0x00, 0x00, 0x00, // string length: 4 (little endian) - UTF-8 BOM + terminator
+			0xEF, 0xBB, 0xBF, // UTF-8 BOM
+			0x00, // UTF-8 terminator (empty string)
 		}
 
 		m, err := c.Decode("a.b.complex", testdata)

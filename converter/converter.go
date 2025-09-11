@@ -323,7 +323,7 @@ func (c *IDLConverter) parseString(data []byte, st typeref.StringType, _ ast.Mod
 	if st.Length != nil {
 		return ParseBytesToFixedLengthString(data, *st.Length)
 	}
-	return ParseBytesToDynamicString(data)
+	return ParseBytesToDynamicStringWithEndian(data, c.IsLittleEndian)
 }
 
 func (c *IDLConverter) parseSelfDefineType(data []byte, definedType typeref.TypeName, module ast.Module) (interface{}, []byte, error) {
