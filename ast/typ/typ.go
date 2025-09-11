@@ -25,7 +25,6 @@ type FieldRefType int
 const (
 	BitFieldType FieldRefType = iota
 	OctetType
-	OctetArrayType // 保留以向后兼容
 	ShortType
 	UnsignedShortType
 	LongType
@@ -38,4 +37,5 @@ const (
 	FloatType
 	StringType
 	ArrayType // 新的通用数组类型
+	DoubleType
 )

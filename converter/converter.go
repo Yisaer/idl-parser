@@ -24,6 +24,23 @@ type IDLConverter struct {
 	Module ast.Module
 }
 
+func NewIDLConverterWithModule(Config IDlConverterConfig, module ast.Module) (*IDLConverter, error) {
+	c := &IDLConverter{
+		IDlConverterConfig: Config,
+	}
+	if err := c.verifyConfig(); err != nil {
+		return nil, err
+	}
+	c.Module = module
+	if err := c.verifyModule(c.Module); err != nil {
+		return nil, err
+	}
+	if err := c.verifyStruct(c.Module); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
 func NewIDLConverter(Config IDlConverterConfig) (*IDLConverter, error) {
 	c := &IDLConverter{
 		IDlConverterConfig: Config,
@@ -267,6 +284,12 @@ func (c *IDLConverter) parseDataByType(data []byte, t typeref.TypeRef, module as
 			return nil, nil, fmt.Errorf("type %v is not float type", t.TypeRefType())
 		}
 		return c.parseFloat(data, float, module)
+	case typ.DoubleType:
+		double, ok := t.(typeref.DoubleType)
+		if !ok {
+			return nil, nil, fmt.Errorf("type %v is not double type", t.TypeRefType())
+		}
+		return c.parseDouble(data, double, module)
 	case typ.SequenceType:
 		seq := t.(typeref.Sequence)
 		return c.parseBytesToList(data, seq, module)
@@ -333,6 +356,10 @@ func (c *IDLConverter) parseBoolean(data []byte, boolean typeref.BooleanType, _ 
 
 func (c *IDLConverter) parseFloat(data []byte, float typeref.FloatType, _ ast.Module) (interface{}, []byte, error) {
 	return c.parseBytesToFloat32(data)
+}
+
+func (c *IDLConverter) parseDouble(data []byte, float typeref.DoubleType, _ ast.Module) (interface{}, []byte, error) {
+	return c.parseBytesToFloat64(data)
 }
 
 func (c *IDLConverter) parseString(data []byte, st typeref.StringType, _ ast.Module) (interface{}, []byte, error) {
