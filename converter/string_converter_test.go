@@ -11,7 +11,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 	// 创建测试用的 IDLConverter
 	converter := &IDLConverter{
 		IDlConverterConfig: IDlConverterConfig{
-			IsLittleEndian: false,
+			IsLittleEndian:    false,
 			LengthFieldLength: 4,
 		},
 	}
@@ -204,7 +204,7 @@ func TestParseBytesToDynamicString(t *testing.T) {
 	// 创建测试用的 IDLConverter
 	converter := &IDLConverter{
 		IDlConverterConfig: IDlConverterConfig{
-			IsLittleEndian: false,
+			IsLittleEndian:    false,
 			LengthFieldLength: 4,
 		},
 	}
