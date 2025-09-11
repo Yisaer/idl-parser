@@ -269,7 +269,7 @@ func (c *IDLConverter) parseDataByType(data []byte, t typeref.TypeRef, module as
 	return nil, nil, fmt.Errorf("unsupported type:%v", t.TypeName())
 }
 
-func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, module ast.Module) (interface{}, []byte, error) {
+func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, module ast.Module) ([]interface{}, []byte, error) {
 	remained := data
 	var err error
 	var v interface{}
@@ -285,8 +285,8 @@ func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, modu
 	return result, remained, nil
 }
 
-func (c *IDLConverter) parseOctet(data []byte, ot typeref.OctetType, _ ast.Module) (int8, []byte, error) {
-	return c.parseBytesToInt64(data, 1)
+func (c *IDLConverter) parseOctet(data []byte, ot typeref.OctetType, _ ast.Module) (interface{}, []byte, error) {
+	return c.parseBytesToUint8(data)
 }
 
 func (c *IDLConverter) parseShort(data []byte, short typeref.ShortType, _ ast.Module) (interface{}, []byte, error) {
@@ -306,7 +306,7 @@ func (c *IDLConverter) parseUnsignedLong(data []byte, unsignedLong typeref.Unsig
 }
 
 func (c *IDLConverter) parseLongLong(data []byte, longLong typeref.LongLongType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToInt64(data, 8)
+	return c.parseBytesToInt64(data)
 }
 
 func (c *IDLConverter) parseUnsignedLongLong(data []byte, unsignedLongLong typeref.UnsignedLongLongType, _ ast.Module) (interface{}, []byte, error) {
@@ -318,7 +318,7 @@ func (c *IDLConverter) parseBoolean(data []byte, boolean typeref.BooleanType, _ 
 }
 
 func (c *IDLConverter) parseFloat(data []byte, float typeref.FloatType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToFloat64(data, 4)
+	return c.parseBytesToFloat32(data)
 }
 
 func (c *IDLConverter) parseString(data []byte, st typeref.StringType, _ ast.Module) (interface{}, []byte, error) {
