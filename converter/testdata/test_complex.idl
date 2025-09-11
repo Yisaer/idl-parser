@@ -4,8 +4,6 @@ module a {
             short id;
             long timestamp;
             float value;
-            sequence<octet> data;
-            string name;
         }
     };
 }

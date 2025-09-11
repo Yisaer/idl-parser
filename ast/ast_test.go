@@ -172,6 +172,22 @@ func TestModuleJson(t *testing.T) {
 					}`,
 			expected: `{"name":"spi","content":[{"name":"message_123","fields":[{"annotations":[{"name":"format","values":{"a":"b","c":"123"}}],"type":{"self_type":"octet"},"name":"header"}],"type":"Struct"}],"type":"Module"}`,
 		},
+		{
+			input: `module spi {
+    struct frame {
+        unsigned long id; // 4 字节 id
+        octet len; // 1 字节 长度
+        sequence<octet> payload;  // len字节Payload
+    };
+
+    struct packet {
+        unsigned long long ts;            // 8字节 时间戳
+        unsigned short len;            // 2字节 总长度
+        @format (dbc=spii/test.idl) sequence<frame> frames; // 不定长CANMessage数组
+    }
+}`,
+			expected: `{"name":"spi","content":[{"name":"frame","fields":[{"type":{"self_type":"unsigned long"},"name":"id"},{"type":{"self_type":"octet"},"name":"len"},{"type":{"self_type":"sequence","inner_type":{"self_type":"octet"}},"name":"payload"}],"type":"Struct"},{"name":"packet","fields":[{"type":{"self_type":"unsigned long long"},"name":"ts"},{"type":{"self_type":"unsigned short"},"name":"len"},{"annotations":[{"name":"format","values":{"dbc":"spii/test.idl"}}],"type":{"self_type":"sequence","inner_type":{"self_type":"frame","name":"frame"}},"name":"frames"}],"type":"Struct"}],"type":"Module"}`,
+		},
 	}
 	for _, test := range tests {
 		result := Parse(test.input)
@@ -214,4 +230,17 @@ module outer {
 		require.NoError(t, err)
 		require.Equal(t, test.expected, string(v))
 	}
+}
+
+func TestParseError(t *testing.T) {
+	input := `module a {
+    module b {
+        struct c {
+            octet id1;
+            octet id2
+        }
+    };
+}`
+	result := Parse(input)
+	require.NotNil(t, result.Err)
 }

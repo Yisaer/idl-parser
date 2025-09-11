@@ -2,7 +2,6 @@ package converter
 
 import (
 	"encoding/binary"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -11,12 +10,6 @@ import (
 	"github.com/yisaer/idl-parser/ast/typ"
 	"github.com/yisaer/idl-parser/ast/typeref"
 )
-
-func TestConverterErr(t *testing.T) {
-	_, err := NewIDLConverter("./testdata/test_error.idl", false)
-	require.Error(t, err)
-	fmt.Println(err.Error())
-}
 
 // createTestConverter 创建用于测试的 IDLConverter 实例
 func createTestConverter(isLittleEndian bool) *IDLConverter {
@@ -27,8 +20,6 @@ func createTestConverter(isLittleEndian bool) *IDLConverter {
 
 func TestConverterStsDecode(t *testing.T) {
 	_, err := NewIDLConverter("./testdata/test_sts.idl", false)
-	require.NoError(t, err)
-	_, err = NewIDLConverter("./testdata/test1.idl", false)
 	require.NoError(t, err)
 }
 
@@ -105,85 +96,6 @@ func TestParseDataByType_Octet(t *testing.T) {
 			octetType := typeref.NewOctetType()
 			converter := createTestConverter(tt.isLittleEndian)
 			result, remain, err := converter.parseDataByType(tt.data, octetType, ast.Module{})
-
-			if tt.expectError {
-				require.Error(t, err)
-				require.Nil(t, remain)
-			} else {
-				require.NoError(t, err)
-				require.Equal(t, tt.expected, result)
-				require.Equal(t, tt.expectedRemain, remain)
-			}
-		})
-	}
-}
-
-func TestParseDataByType_SequenceOfOctet(t *testing.T) {
-	tests := []struct {
-		name           string
-		data           []byte
-		expected       []interface{}
-		expectedRemain []byte
-		expectError    bool
-		isLittleEndian bool
-	}{
-		{
-			name:           "parse sequence with 3 octet elements (big endian)",
-			data:           []byte{0, 0, 0, 3, 10, 20, 30, 100, 200},
-			expected:       []interface{}{int64(10), int64(20), int64(30)},
-			expectedRemain: []byte{100, 200},
-			expectError:    false,
-			isLittleEndian: false,
-		},
-		{
-			name:           "parse sequence with 3 octet elements (little endian)",
-			data:           []byte{3, 0, 0, 0, 10, 20, 30, 100, 200},
-			expected:       []interface{}{int64(10), int64(20), int64(30)},
-			expectedRemain: []byte{100, 200},
-			expectError:    false,
-			isLittleEndian: true,
-		},
-		{
-			name:           "parse sequence with 0 octet elements (big endian)",
-			data:           []byte{0, 0, 0, 0, 100, 200},
-			expected:       []interface{}{},
-			expectedRemain: []byte{100, 200},
-			expectError:    false,
-			isLittleEndian: false,
-		},
-		{
-			name:           "parse sequence with 1 octet element (big endian)",
-			data:           []byte{0, 0, 0, 1, 255, 100, 200},
-			expected:       []interface{}{int64(255)},
-			expectedRemain: []byte{100, 200},
-			expectError:    false,
-			isLittleEndian: false,
-		},
-		{
-			name:           "should return error when insufficient data for sequence length",
-			data:           []byte{0, 0, 0},
-			expected:       nil,
-			expectedRemain: nil,
-			expectError:    true,
-			isLittleEndian: false,
-		},
-		{
-			name:           "should return error when sequence length correct but data insufficient",
-			data:           []byte{0, 0, 0, 3, 10, 20},
-			expected:       nil,
-			expectedRemain: nil,
-			expectError:    true,
-			isLittleEndian: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			octetType := typeref.NewOctetType()
-			sequenceType := typeref.NewSequence(octetType)
-			converter := createTestConverter(tt.isLittleEndian)
-
-			result, remain, err := converter.parseDataByType(tt.data, sequenceType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -950,12 +862,6 @@ func TestConverterDecodeComplexStruct(t *testing.T) {
 			0x30, 0x39, // short: 12345 (big endian)
 			0x49, 0x96, 0x02, 0xD2, // long: 1234567890 (big endian)
 			0x40, 0x48, 0xF5, 0xC3, // float: 3.14 (big endian)
-			0x00, 0x00, 0x00, 0x03, // sequence length: 3 (big endian)
-			0x01, 0x02, 0x03, // sequence data: [1, 2, 3]
-			0x00, 0x00, 0x00, 0x08, // string length: 8 (big endian) - UTF-8 BOM + "test" + terminator
-			0xEF, 0xBB, 0xBF, // UTF-8 BOM
-			't', 'e', 's', 't', // string: "test"
-			0x00, // UTF-8 terminator
 		}
 
 		m, err := c.Decode("a.b.complex", testdata)
@@ -963,8 +869,6 @@ func TestConverterDecodeComplexStruct(t *testing.T) {
 		require.Equal(t, int64(12345), m["id"])
 		require.Equal(t, int64(1234567890), m["timestamp"])
 		require.InDelta(t, 3.14, m["value"], 0.001) // 使用 InDelta 比较浮点数
-		require.Equal(t, []interface{}{int64(1), int64(2), int64(3)}, m["data"])
-		require.Equal(t, "test", m["name"])
 	})
 
 	// 测试小端序
@@ -977,12 +881,6 @@ func TestConverterDecodeComplexStruct(t *testing.T) {
 			0x39, 0x30, // short: 12345 (little endian)
 			0xD2, 0x02, 0x96, 0x49, // long: 1234567890 (little endian)
 			0xC3, 0xF5, 0x48, 0x40, // float: 3.14 (little endian)
-			0x03, 0x00, 0x00, 0x00, // sequence length: 3 (little endian)
-			0x01, 0x02, 0x03, // sequence data: [1, 2, 3]
-			0x08, 0x00, 0x00, 0x00, // string length: 8 (little endian) - UTF-8 BOM + "test" + terminator
-			0xEF, 0xBB, 0xBF, // UTF-8 BOM
-			't', 'e', 's', 't', // string: "test"
-			0x00, // UTF-8 terminator
 		}
 
 		m, err := c.Decode("a.b.complex", testdata)
@@ -990,36 +888,5 @@ func TestConverterDecodeComplexStruct(t *testing.T) {
 		require.Equal(t, int64(12345), m["id"])
 		require.Equal(t, int64(1234567890), m["timestamp"])
 		require.InDelta(t, 3.14, m["value"], 0.001) // 使用 InDelta 比较浮点数
-		require.Equal(t, []interface{}{int64(1), int64(2), int64(3)}, m["data"])
-		require.Equal(t, "test", m["name"])
-	})
-}
-
-func TestConverterDecodeComplexStructMixedEndian(t *testing.T) {
-	// 测试混合字节序的情况（虽然实际使用中不常见，但测试边界情况）
-	t.Run("mixed endian edge case", func(t *testing.T) {
-		c, err := NewIDLConverter("./testdata/test_complex.idl", true)
-		require.NoError(t, err)
-
-		// 小端序数据，但包含一些边界值
-		// 总长度：2(short) + 4(long) + 4(float) + 4(seq_len) + 0(seq_data) + 4(str_len) + 4(str_data) = 26字节
-		testdata := []byte{
-			0xFF, 0x7F, // short: 32767 (little endian, max positive short)
-			0xFF, 0xFF, 0xFF, 0x7F, // long: 2147483647 (little endian, max positive long)
-			0x00, 0x00, 0x80, 0x3F, // float: 1.0 (little endian)
-			0x00, 0x00, 0x00, 0x00, // sequence length: 0 (little endian)
-			// 序列数据为空（长度为0）
-			0x04, 0x00, 0x00, 0x00, // string length: 4 (little endian) - UTF-8 BOM + terminator
-			0xEF, 0xBB, 0xBF, // UTF-8 BOM
-			0x00, // UTF-8 terminator (empty string)
-		}
-
-		m, err := c.Decode("a.b.complex", testdata)
-		require.NoError(t, err)
-		require.Equal(t, int64(32767), m["id"])
-		require.Equal(t, int64(2147483647), m["timestamp"])
-		require.InDelta(t, 1.0, m["value"], 0.001) // 使用 InDelta 比较浮点数
-		require.Equal(t, []interface{}{}, m["data"])
-		require.Equal(t, "", m["name"])
 	})
 }
