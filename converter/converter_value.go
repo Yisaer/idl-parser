@@ -167,6 +167,9 @@ func (c *IDLConverter) parseBytesToFloat64(data []byte) (float64, []byte, error)
 
 func (c *IDLConverter) parseBytesToList(data []byte, seqType typeref.Sequence, module ast.Module) ([]interface{}, []byte, error) {
 	sequenceLen, remained, err := c.parseBytesToLength(data)
+	if err != nil {
+		return nil, nil, err
+	}
 	result := make([]interface{}, 0, sequenceLen)
 	var v interface{}
 	for i := 0; i < int(sequenceLen); i++ {
