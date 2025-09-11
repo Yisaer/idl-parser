@@ -2,7 +2,6 @@ package converter
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"math"
 
@@ -28,21 +27,7 @@ func (c *IDLConverter) parseBytesToStruct(data []byte, st struct_type.Struct, mo
 }
 
 func (c *IDLConverter) parseBytesToString(data []byte) (value string, remained []byte, err error) {
-	if len(data) < 4 {
-		return "", nil, fmt.Errorf("expect data len larger than %v got len %v", 4, len(data))
-	}
-	strLen, remained, err := c.parseBytesToInt64(data, 4)
-	if err != nil {
-		return "", nil, fmt.Errorf("parse sequence len error:%v", err.Error())
-	}
-	if strLen == 0 {
-		// 字符串长度为 0 的特殊情况
-		return "", remained, nil
-	}
-	if int64(len(remained)) < strLen {
-		return "", nil, errors.New("data truncated, insufficient bytes for string")
-	}
-	return string(remained[:strLen]), remained[strLen:], nil
+	return ParseBytesToDynamicString(data)
 }
 
 func (c *IDLConverter) parseBytesToInt64(data []byte, expLen int) (int64, []byte, error) {
