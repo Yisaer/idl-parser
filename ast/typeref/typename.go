@@ -8,17 +8,12 @@ import (
 )
 
 type TypeName struct {
-	SelfType  string `json:"self_type"`
-	Name      string `json:"name"`
-	ArraySize int    `json:"array_size,omitempty"` // 0 means not an array
+	SelfType string `json:"self_type"`
+	Name     string `json:"name"`
 }
 
 func NewTypeName(name string) TypeName {
 	return TypeName{Name: name, SelfType: name}
-}
-
-func NewTypeNameArrayType(name string, arraySize int) TypeName {
-	return TypeName{Name: name, SelfType: name, ArraySize: arraySize}
 }
 
 func (TypeName) TypeRefType() typ.FieldRefType {

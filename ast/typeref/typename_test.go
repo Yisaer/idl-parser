@@ -48,7 +48,6 @@ func TestParseTypeName(t *testing.T) {
 				}
 				require.Equal(t, tt.expectedName, result.Output.Name)
 				require.Equal(t, tt.expectedName, result.Output.SelfType)
-				require.Equal(t, tt.expectedSize, result.Output.ArraySize)
 				require.Equal(t, tt.expectedRemain, result.Remaining)
 			}
 		})
@@ -146,12 +145,4 @@ func TestNewTypeName(t *testing.T) {
 	typeName := NewTypeName("MyType")
 	require.Equal(t, "MyType", typeName.Name)
 	require.Equal(t, "MyType", typeName.SelfType)
-	require.Equal(t, 0, typeName.ArraySize)
-}
-
-func TestNewTypeNameArrayType(t *testing.T) {
-	typeName := NewTypeNameArrayType("MyType", 8)
-	require.Equal(t, "MyType", typeName.Name)
-	require.Equal(t, "MyType", typeName.SelfType)
-	require.Equal(t, 8, typeName.ArraySize)
 }

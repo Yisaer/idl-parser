@@ -330,20 +330,6 @@ func (c *IDLConverter) parseSelfDefineType(data []byte, definedType typeref.Type
 	for _, content := range module.Content {
 		if content.GetName() == definedType.Name && content.ModuleContentType() == typ.StructType {
 			st := content.(struct_type.Struct)
-			if definedType.ArraySize > 0 {
-				remained := data
-				var err error
-				var v map[string]interface{}
-				result := make([]interface{}, 0, definedType.ArraySize)
-				for i := 0; i < definedType.ArraySize; i++ {
-					v, remained, err = c.parseBytesToStruct(remained, st, module)
-					if err != nil {
-						return nil, nil, fmt.Errorf("parse array element %v error:%v", i, err.Error())
-					}
-					result = append(result, v)
-				}
-				return result, remained, nil
-			}
 			return c.parseBytesToStruct(data, st, module)
 		}
 	}
