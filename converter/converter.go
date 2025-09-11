@@ -170,6 +170,14 @@ func isSupportedTyp(tar typ.FieldRefType) bool {
 	return false
 }
 
+func (c *IDLConverter) IsSchemaIDExist(schemaID string) bool {
+	_, _, err := c.travelModule(schemaID)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 func (c *IDLConverter) Decode(schemaID string, data []byte) (map[string]interface{}, error) {
 	targetSts, targetModule, err := c.travelModule(schemaID)
 	if err != nil {
