@@ -33,6 +33,15 @@ func parseField(code string) gomme.Result[Field, string] {
 	var typeRefParser gomme.Parser[string, typeref.TypeRef] = typeref.ParseTypeRef
 	var annotationsParser gomme.Parser[string, annotation.Annotations] = annotation.ParseAnnotations
 	var optionalWhitespace gomme.Parser[string, string] = gomme.Whitespace0[string]()
+	var parseEmptyWithComments gomme.Parser[string, string] = gomme.Recognize(
+		gomme.Many0(
+			gomme.Alternative(
+				utils.ParseComment,
+				gomme.Whitespace1[string](),
+			),
+		),
+	)
+
 	return gomme.Map(
 		gomme.Pair(
 			gomme.SeparatedPair(
@@ -47,7 +56,7 @@ func parseField(code string) gomme.Result[Field, string] {
 				),
 			),
 			gomme.Pair(
-				gomme.Whitespace0[string](),
+				parseEmptyWithComments,
 				gomme.Token[string](";"),
 			),
 		),
@@ -80,7 +89,7 @@ func Parse(code string) gomme.Result[Struct, string] {
 	fieldsResult := utils.InEmpty(
 		gomme.Delimited(
 			utils.InEmpty(gomme.Token[string]("{")),
-			gomme.SeparatedList0(parseField, gomme.Whitespace0[string]()),
+			gomme.SeparatedList0(parseField, utils.ParseEmpty0),
 			utils.InEmpty(gomme.Token[string]("}")),
 		))(nameResult.Remaining)
 	if fieldsResult.Err != nil {

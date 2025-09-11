@@ -1,0 +1,13 @@
+module spi {
+    struct frame {
+        unsigned long id; // 4 字节 id
+        octet len; // 1 字节 长度
+        sequence<octet> payload;  // len字节Payload
+    };
+
+    struct packet {
+        unsigned long long ts;            // 8字节 时间戳
+        unsigned short len;            // 2字节 总长度
+        @format (dbc=spii/test.idl) sequence<frame> frames; // 不定长CANMessage数组
+    }
+}

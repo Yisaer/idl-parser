@@ -28,6 +28,8 @@ func createTestConverter(isLittleEndian bool) *IDLConverter {
 func TestConverterStsDecode(t *testing.T) {
 	_, err := NewIDLConverter("./testdata/test_sts.idl", false)
 	require.NoError(t, err)
+	_, err = NewIDLConverter("./testdata/test1.idl", false)
+	require.NoError(t, err)
 }
 
 func TestConverterDecode(t *testing.T) {
