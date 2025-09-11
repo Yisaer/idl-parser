@@ -285,21 +285,7 @@ func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, modu
 	return result, remained, nil
 }
 
-func (c *IDLConverter) parseOctet(data []byte, ot typeref.OctetType, _ ast.Module) (interface{}, []byte, error) {
-	if ot.ArraySize > 0 {
-		remained := data
-		var err error
-		var v int64
-		result := make([]int64, 0)
-		for i := 0; i < ot.ArraySize; i++ {
-			v, remained, err = c.parseBytesToInt64(remained, 1)
-			if err != nil {
-				return nil, nil, err
-			}
-			result = append(result, v)
-		}
-		return result, remained, nil
-	}
+func (c *IDLConverter) parseOctet(data []byte, ot typeref.OctetType, _ ast.Module) (int8, []byte, error) {
 	return c.parseBytesToInt64(data, 1)
 }
 
