@@ -2,6 +2,7 @@ package converter
 
 import (
 	"container/list"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -12,21 +13,38 @@ import (
 	"github.com/yisaer/idl-parser/ast/typeref"
 )
 
-type IDLConverter struct {
-	IsLittleEndian bool
-	SchemaPath     string
-	Module         ast.Module
+type IDlConverterConfig struct {
+	IsLittleEndian    bool
+	LengthFieldLength int // should be 1,2,4 bytes
+	SchemaPath        string
 }
 
-func NewIDLConverter(schemaPath string, isLittleEndian bool) (*IDLConverter, error) {
+type IDLConverter struct {
+	IDlConverterConfig
+	Module ast.Module
+}
+
+func NewIDLConverter(Config IDlConverterConfig) (*IDLConverter, error) {
 	c := &IDLConverter{
-		SchemaPath:     schemaPath,
-		IsLittleEndian: isLittleEndian,
+		IDlConverterConfig: Config,
+	}
+	if err := c.verifyConfig(); err != nil {
+		return nil, err
 	}
 	if err := c.init(); err != nil {
 		return nil, err
 	}
 	return c, nil
+}
+
+func (c *IDLConverter) verifyConfig() error {
+	switch c.LengthFieldLength {
+	case 1, 2, 4:
+		break
+	default:
+		return errors.New("invalid length field, should be 1, 2 or 4")
+	}
+	return nil
 }
 
 func (c *IDLConverter) init() error {
@@ -265,7 +283,7 @@ func (c *IDLConverter) parseDataByType(data []byte, t typeref.TypeRef, module as
 	return nil, nil, fmt.Errorf("unsupported type:%v", t.TypeName())
 }
 
-func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, module ast.Module) (interface{}, []byte, error) {
+func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, module ast.Module) ([]interface{}, []byte, error) {
 	remained := data
 	var err error
 	var v interface{}
@@ -282,21 +300,7 @@ func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, modu
 }
 
 func (c *IDLConverter) parseOctet(data []byte, ot typeref.OctetType, _ ast.Module) (interface{}, []byte, error) {
-	if ot.ArraySize > 0 {
-		remained := data
-		var err error
-		var v int64
-		result := make([]int64, 0)
-		for i := 0; i < ot.ArraySize; i++ {
-			v, remained, err = c.parseBytesToInt64(remained, 1)
-			if err != nil {
-				return nil, nil, err
-			}
-			result = append(result, v)
-		}
-		return result, remained, nil
-	}
-	return c.parseBytesToInt64(data, 1)
+	return c.parseBytesToUint8(data)
 }
 
 func (c *IDLConverter) parseShort(data []byte, short typeref.ShortType, _ ast.Module) (interface{}, []byte, error) {
@@ -316,7 +320,7 @@ func (c *IDLConverter) parseUnsignedLong(data []byte, unsignedLong typeref.Unsig
 }
 
 func (c *IDLConverter) parseLongLong(data []byte, longLong typeref.LongLongType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToInt64(data, 8)
+	return c.parseBytesToInt64(data)
 }
 
 func (c *IDLConverter) parseUnsignedLongLong(data []byte, unsignedLongLong typeref.UnsignedLongLongType, _ ast.Module) (interface{}, []byte, error) {
@@ -328,14 +332,14 @@ func (c *IDLConverter) parseBoolean(data []byte, boolean typeref.BooleanType, _ 
 }
 
 func (c *IDLConverter) parseFloat(data []byte, float typeref.FloatType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToFloat64(data, 4)
+	return c.parseBytesToFloat32(data)
 }
 
 func (c *IDLConverter) parseString(data []byte, st typeref.StringType, _ ast.Module) (interface{}, []byte, error) {
 	if st.Length != nil {
-		return ParseBytesToFixedLengthString(data, *st.Length)
+		return c.ParseBytesToFixedLengthString(data, *st.Length)
 	}
-	return ParseBytesToDynamicStringWithEndian(data, c.IsLittleEndian)
+	return c.ParseBytesToDynamicString(data)
 }
 
 func (c *IDLConverter) parseSelfDefineType(data []byte, definedType typeref.TypeName, module ast.Module) (interface{}, []byte, error) {

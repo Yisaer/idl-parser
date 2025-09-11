@@ -14,17 +14,28 @@ import (
 // createTestConverter 创建用于测试的 IDLConverter 实例
 func createTestConverter(isLittleEndian bool) *IDLConverter {
 	return &IDLConverter{
-		IsLittleEndian: isLittleEndian,
+		IDlConverterConfig: IDlConverterConfig{
+			IsLittleEndian:    isLittleEndian,
+			LengthFieldLength: 4,
+		},
 	}
 }
 
 func TestConverterStsDecode(t *testing.T) {
-	_, err := NewIDLConverter("./testdata/test_sts.idl", false)
+	_, err := NewIDLConverter(IDlConverterConfig{
+		IsLittleEndian:    false,
+		LengthFieldLength: 4,
+		SchemaPath:        "./testdata/test_sts.idl",
+	})
 	require.NoError(t, err)
 }
 
 func TestConverterDecode(t *testing.T) {
-	c, err := NewIDLConverter("./testdata/test.idl", false)
+	c, err := NewIDLConverter(IDlConverterConfig{
+		IsLittleEndian:    false,
+		LengthFieldLength: 4,
+		SchemaPath:        "./testdata/test.idl",
+	})
 	require.NoError(t, err)
 	testdata := []byte{41, 42}
 	m, err := c.Decode("a.b.c", testdata)
@@ -33,7 +44,11 @@ func TestConverterDecode(t *testing.T) {
 }
 
 func TestConverterDecodeLittleEndian(t *testing.T) {
-	c, err := NewIDLConverter("./testdata/test.idl", true)
+	c, err := NewIDLConverter(IDlConverterConfig{
+		IsLittleEndian:    true,
+		LengthFieldLength: 4,
+		SchemaPath:        "./testdata/test.idl",
+	})
 	require.NoError(t, err)
 	testdata := []byte{41, 42}
 	m, err := c.Decode("a.b.c", testdata)
@@ -854,7 +869,11 @@ func TestParseDataByType_SequenceOfString(t *testing.T) {
 func TestConverterDecodeComplexStruct(t *testing.T) {
 	// 测试大端序
 	t.Run("big endian", func(t *testing.T) {
-		c, err := NewIDLConverter("./testdata/test_complex.idl", false)
+		c, err := NewIDLConverter(IDlConverterConfig{
+			IsLittleEndian:    false,
+			LengthFieldLength: 4,
+			SchemaPath:        "./testdata/test_complex.idl",
+		})
 		require.NoError(t, err)
 
 		// 大端序数据：short(12345), long(1234567890), float(3.14), sequence[1,2,3], string("test")
@@ -873,7 +892,11 @@ func TestConverterDecodeComplexStruct(t *testing.T) {
 
 	// 测试小端序
 	t.Run("little endian", func(t *testing.T) {
-		c, err := NewIDLConverter("./testdata/test_complex.idl", true)
+		c, err := NewIDLConverter(IDlConverterConfig{
+			IsLittleEndian:    true,
+			LengthFieldLength: 4,
+			SchemaPath:        "./testdata/test_complex.idl",
+		})
 		require.NoError(t, err)
 
 		// 小端序数据：short(12345), long(1234567890), float(3.14), sequence[1,2,3], string("test")

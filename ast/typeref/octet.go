@@ -7,16 +7,11 @@ import (
 )
 
 type OctetType struct {
-	SelfType  string `json:"self_type"`
-	ArraySize int    `json:"array_size,omitempty"` // 0 means not an array
+	SelfType string `json:"self_type"`
 }
 
 func NewOctetType() OctetType {
 	return OctetType{SelfType: "octet"}
-}
-
-func NewOctetArrayType(arraySize int) OctetType {
-	return OctetType{SelfType: "octet", ArraySize: arraySize}
 }
 
 func (t OctetType) TypeName() string {
@@ -33,8 +28,5 @@ func ParseOctet(code string) gomme.Result[OctetType, string] {
 }
 
 func (t OctetType) TypeRefType() typ.FieldRefType {
-	if t.ArraySize > 0 {
-		return typ.OctetArrayType
-	}
 	return typ.OctetType
 }

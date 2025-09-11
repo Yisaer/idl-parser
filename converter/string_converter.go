@@ -17,17 +17,17 @@ const (
 )
 
 // detectEncodingFromBOM 通过BOM探测编码
-func detectEncodingFromBOM(data []byte) (StringEncoding, int) {
+func detectEncodingFromBOM(data []byte) (StringEncoding, int, error) {
 	if len(data) >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF {
-		return EncodingUTF8, 3
+		return EncodingUTF8, 3, nil
 	}
 	if len(data) >= 2 && data[0] == 0xFE && data[1] == 0xFF {
-		return EncodingUTF16BE, 2
+		return EncodingUTF16BE, 2, nil
 	}
 	if len(data) >= 2 && data[0] == 0xFF && data[1] == 0xFE {
-		return EncodingUTF16LE, 2
+		return EncodingUTF16LE, 2, nil
 	}
-	return EncodingUnknown, 0
+	return EncodingUnknown, 0, errors.New("unknown encoding: no valid BOM found")
 }
 
 // getTerminatorLength 获取终止符长度
@@ -93,33 +93,6 @@ func convertUTF16BytesToString(data []byte, byteOrder binary.ByteOrder) (string,
 	return string(runes), nil
 }
 
-func ParseBytesToFixedLengthString(data []byte, fixedLength int) (value string, remained []byte, err error) {
-	if len(data) < fixedLength {
-		return "", nil, errors.New("insufficient data for fixed-length string")
-	}
-
-	// 1. 检测BOM确定编码方式
-	encoding, bomLen := detectEncodingFromBOM(data)
-	if encoding == EncodingUnknown {
-		return "", nil, errors.New("fixed-length string must start with BOM")
-	}
-
-	// 2. 验证固定长度
-	if len(data) < fixedLength {
-		return "", nil, errors.New("data length less than fixed length")
-	}
-
-	// 3. 提取字符串内容（去除BOM和终止符）
-	stringData := data[:fixedLength]
-	content, err := extractFixedStringContent(stringData, encoding, bomLen)
-	if err != nil {
-		return "", nil, err
-	}
-
-	// 4. 返回解析结果和剩余数据
-	return content, data[fixedLength:], nil
-}
-
 // extractFixedStringContent 从定长字符串数据中提取内容
 func extractFixedStringContent(data []byte, encoding StringEncoding, bomLen int) (string, error) {
 	// 跳过BOM
@@ -169,43 +142,6 @@ func removePadding(data []byte, encoding StringEncoding) []byte {
 	return data
 }
 
-func ParseBytesToDynamicString(data []byte) (value string, remained []byte, err error) {
-	return ParseBytesToDynamicStringWithEndian(data, false) // 默认大端序
-}
-
-func ParseBytesToDynamicStringWithEndian(data []byte, isLittleEndian bool) (value string, remained []byte, err error) {
-	if len(data) < 4 {
-		return "", nil, errors.New("insufficient data for dynamic string length field")
-	}
-
-	// 1. 读取4字节长度字段（根据字节序）
-	var lengthField uint32
-	if isLittleEndian {
-		lengthField = binary.LittleEndian.Uint32(data[:4])
-	} else {
-		lengthField = binary.BigEndian.Uint32(data[:4])
-	}
-	stringDataStart := 4
-
-	// 2. 检查是否有足够的数据
-	if len(data) < int(stringDataStart)+int(lengthField) {
-		return "", nil, errors.New("insufficient data for dynamic string content")
-	}
-
-	// 3. 提取字符串数据
-	stringData := data[stringDataStart : stringDataStart+int(lengthField)]
-	totalConsumed := stringDataStart + int(lengthField)
-
-	// 4. 解析字符串内容
-	content, err := parseDynamicStringContent(stringData)
-	if err != nil {
-		return "", nil, err
-	}
-
-	// 5. 返回解析结果和剩余数据
-	return content, data[totalConsumed:], nil
-}
-
 // parseDynamicStringContent 解析动态字符串的内容部分
 func parseDynamicStringContent(data []byte) (string, error) {
 	if len(data) == 0 {
@@ -213,11 +149,9 @@ func parseDynamicStringContent(data []byte) (string, error) {
 	}
 
 	// 1. 检测BOM确定编码方式
-	encoding, bomLen := detectEncodingFromBOM(data)
-	if encoding == EncodingUnknown {
-		// 无BOM，尝试推断编码
-		encoding = inferEncodingFromContent(data)
-		bomLen = 0
+	encoding, bomLen, err := detectEncodingFromBOM(data)
+	if err != nil {
+		return "", err
 	}
 
 	// 2. 提取字符串内容（去除BOM和终止符）
@@ -246,49 +180,56 @@ func parseDynamicStringContent(data []byte) (string, error) {
 	return convertBytesToString(contentBytes, encoding)
 }
 
-// inferEncodingFromContent 从内容推断编码方式
-func inferEncodingFromContent(data []byte) StringEncoding {
-	if len(data) < 2 {
-		return EncodingUTF8
+// ParseBytesToDynamicString 使用可配置的长度字段解析动态字符串
+func (c *IDLConverter) ParseBytesToDynamicString(data []byte) (value string, remained []byte, err error) {
+	// 1. 使用可配置的长度字段解析长度
+	lengthField, remainedAfterLength, err := c.parseBytesToLength(data)
+	if err != nil {
+		return "", nil, err
 	}
 
-	// 检查是否为UTF-16模式
-	// UTF-16BE: 高字节在前，低字节在后，且低字节通常为0x00（ASCII字符）
-	// UTF-16LE: 低字节在前，高字节在后，且高字节通常为0x00（ASCII字符）
-
-	// 检查前几个字符的模式
-	utf16BECount := 0
-	utf16LECount := 0
-
-	// 检查前几个字符（最多检查前20个字节）
-	maxCheck := len(data)
-	if maxCheck > 20 {
-		maxCheck = 20
+	// 2. 检查是否有足够的数据
+	if len(remainedAfterLength) < lengthField {
+		return "", nil, errors.New("insufficient data for dynamic string content")
 	}
 
-	for i := 0; i < maxCheck-1; i += 2 {
-		if i+1 >= len(data) {
-			break
-		}
+	// 3. 提取字符串数据
+	stringData := remainedAfterLength[:lengthField]
+	totalConsumed := len(data) - len(remainedAfterLength) + lengthField
 
-		// UTF-16BE模式：高字节非零，低字节为零（ASCII字符）
-		if data[i] != 0x00 && data[i+1] == 0x00 {
-			utf16BECount++
-		}
-		// UTF-16LE模式：低字节非零，高字节为零（ASCII字符）
-		if data[i+1] != 0x00 && data[i] == 0x00 {
-			utf16LECount++
-		}
+	// 4. 解析字符串内容
+	content, err := parseDynamicStringContent(stringData)
+	if err != nil {
+		return "", nil, err
 	}
 
-	// 根据模式数量判断编码
-	if utf16BECount > utf16LECount {
-		return EncodingUTF16BE
-	}
-	if utf16LECount > utf16BECount {
-		return EncodingUTF16LE
+	// 5. 返回解析结果和剩余数据
+	return content, data[totalConsumed:], nil
+}
+
+func (c *IDLConverter) ParseBytesToFixedLengthString(data []byte, fixedLength int) (value string, remained []byte, err error) {
+	if len(data) < fixedLength {
+		return "", nil, errors.New("insufficient data for fixed-length string")
 	}
 
-	// 默认返回UTF-8
-	return EncodingUTF8
+	// 1. 检测BOM确定编码方式
+	encoding, bomLen, err := detectEncodingFromBOM(data)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// 2. 验证固定长度
+	if len(data) < fixedLength {
+		return "", nil, errors.New("data length less than fixed length")
+	}
+
+	// 3. 提取字符串内容（去除BOM和终止符）
+	stringData := data[:fixedLength]
+	content, err := extractFixedStringContent(stringData, encoding, bomLen)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// 4. 返回解析结果和剩余数据
+	return content, data[fixedLength:], nil
 }

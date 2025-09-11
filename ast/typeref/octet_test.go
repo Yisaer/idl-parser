@@ -94,11 +94,6 @@ func TestParseOctetTypeRefType(t *testing.T) {
 			octet:    NewOctetType(),
 			expected: typ.OctetType,
 		},
-		{
-			name:     "octet array returns OctetArrayType",
-			octet:    NewOctetArrayType(8),
-			expected: typ.OctetArrayType,
-		},
 	}
 
 	for _, test := range tests {
