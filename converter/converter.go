@@ -24,6 +24,23 @@ type IDLConverter struct {
 	Module ast.Module
 }
 
+func NewIDLConverterWithModule(Config IDlConverterConfig, module ast.Module) (*IDLConverter, error) {
+	c := &IDLConverter{
+		IDlConverterConfig: Config,
+	}
+	if err := c.verifyConfig(); err != nil {
+		return nil, err
+	}
+	c.Module = module
+	if err := c.verifyModule(c.Module); err != nil {
+		return nil, err
+	}
+	if err := c.verifyStruct(c.Module); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
 func NewIDLConverter(Config IDlConverterConfig) (*IDLConverter, error) {
 	c := &IDLConverter{
 		IDlConverterConfig: Config,
