@@ -50,7 +50,7 @@ func (c *IDLConverter) parseBytesToInt8(data []byte) (int8, []byte, error) {
 	return value, remainData, nil
 }
 
-func (c *IDLConverter) parseBytesToInt16(data []byte) (int16, []byte, error) {
+func (c *IDLConverter) parseBytesToInt16(data []byte) (int64, []byte, error) {
 	if len(data) < 2 {
 		return 0, nil, fmt.Errorf("expect data len %v got len %v", 2, len(data))
 	}
@@ -61,20 +61,20 @@ func (c *IDLConverter) parseBytesToInt16(data []byte) (int16, []byte, error) {
 	} else {
 		value = int16(binary.BigEndian.Uint16(parseData))
 	}
-	return value, remainData, nil
+	return int64(value), remainData, nil
 }
 
-func (c *IDLConverter) parseBytesToUint8(data []byte) (uint8, []byte, error) {
+func (c *IDLConverter) parseBytesToUint8(data []byte) (int64, []byte, error) {
 	if len(data) < 1 {
 		return 0, nil, fmt.Errorf("expect data len %v got len %v", 1, len(data))
 	}
 	parseData, remainData := data[:1], data[1:]
 	var value uint8
 	value = parseData[0]
-	return value, remainData, nil
+	return int64(value), remainData, nil
 }
 
-func (c *IDLConverter) parseBytesToUint16(data []byte) (uint16, []byte, error) {
+func (c *IDLConverter) parseBytesToUint16(data []byte) (int64, []byte, error) {
 	if len(data) < 2 {
 		return 0, nil, fmt.Errorf("expect data len %v got len %v", 2, len(data))
 	}
@@ -85,10 +85,10 @@ func (c *IDLConverter) parseBytesToUint16(data []byte) (uint16, []byte, error) {
 	} else {
 		value = binary.BigEndian.Uint16(parseData)
 	}
-	return value, remainData, nil
+	return int64(value), remainData, nil
 }
 
-func (c *IDLConverter) parseBytesToInt32(data []byte) (int32, []byte, error) {
+func (c *IDLConverter) parseBytesToInt32(data []byte) (int64, []byte, error) {
 	if len(data) < 4 {
 		return 0, nil, fmt.Errorf("expect data len %v got len %v", 4, len(data))
 	}
@@ -99,10 +99,10 @@ func (c *IDLConverter) parseBytesToInt32(data []byte) (int32, []byte, error) {
 	} else {
 		value = int32(binary.BigEndian.Uint32(parseData))
 	}
-	return value, remainData, nil
+	return int64(value), remainData, nil
 }
 
-func (c *IDLConverter) parseBytesToUint32(data []byte) (uint32, []byte, error) {
+func (c *IDLConverter) parseBytesToUint32(data []byte) (int64, []byte, error) {
 	if len(data) < 4 {
 		return 0, nil, fmt.Errorf("expect data len %v got len %v", 4, len(data))
 	}
@@ -113,10 +113,10 @@ func (c *IDLConverter) parseBytesToUint32(data []byte) (uint32, []byte, error) {
 	} else {
 		value = binary.BigEndian.Uint32(parseData)
 	}
-	return value, remainData, nil
+	return int64(value), remainData, nil
 }
 
-func (c *IDLConverter) parseBytesToUint64(data []byte) (uint64, []byte, error) {
+func (c *IDLConverter) parseBytesToUint64(data []byte) (int64, []byte, error) {
 	if len(data) < 8 {
 		return 0, nil, fmt.Errorf("expect data len %v got len %v", 8, len(data))
 	}
@@ -127,7 +127,7 @@ func (c *IDLConverter) parseBytesToUint64(data []byte) (uint64, []byte, error) {
 	} else {
 		value = binary.BigEndian.Uint64(parseData)
 	}
-	return value, remainData, nil
+	return int64(value), remainData, nil
 }
 
 func (c *IDLConverter) parseBytesToBoolean(data []byte) (bool, []byte, error) {

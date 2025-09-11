@@ -15,7 +15,8 @@ import (
 func createTestConverter(isLittleEndian bool) *IDLConverter {
 	return &IDLConverter{
 		IDlConverterConfig: IDlConverterConfig{
-			IsLittleEndian: isLittleEndian,
+			IsLittleEndian:    isLittleEndian,
+			LengthFieldLength: 4,
 		},
 	}
 }
