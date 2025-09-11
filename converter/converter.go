@@ -2,6 +2,7 @@ package converter
 
 import (
 	"container/list"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -27,10 +28,23 @@ func NewIDLConverter(Config IDlConverterConfig) (*IDLConverter, error) {
 	c := &IDLConverter{
 		IDlConverterConfig: Config,
 	}
+	if err := c.verifyConfig(); err != nil {
+		return nil, err
+	}
 	if err := c.init(); err != nil {
 		return nil, err
 	}
 	return c, nil
+}
+
+func (c *IDLConverter) verifyConfig() error {
+	switch c.LengthFieldLength {
+	case 1, 2, 4:
+		break
+	default:
+		return errors.New("invalid length field, should be 1, 2 or 4")
+	}
+	return nil
 }
 
 func (c *IDLConverter) init() error {
@@ -323,9 +337,9 @@ func (c *IDLConverter) parseFloat(data []byte, float typeref.FloatType, _ ast.Mo
 
 func (c *IDLConverter) parseString(data []byte, st typeref.StringType, _ ast.Module) (interface{}, []byte, error) {
 	if st.Length != nil {
-		return ParseBytesToFixedLengthString(data, *st.Length)
+		return c.ParseBytesToFixedLengthString(data, *st.Length)
 	}
-	return ParseBytesToDynamicStringWithEndian(data, c.IsLittleEndian)
+	return c.ParseBytesToDynamicString(data)
 }
 
 func (c *IDLConverter) parseSelfDefineType(data []byte, definedType typeref.TypeName, module ast.Module) (interface{}, []byte, error) {

@@ -6,8 +6,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestParseBytesToFixedLengthString 测试 ParseBytesToFixedLengthString 函数的定长字符串解析
+// TestParseBytesToFixedLengthString 测试 IDLConverter.ParseBytesToFixedLengthString 方法的定长字符串解析
 func TestParseBytesToFixedLengthString(t *testing.T) {
+	// 创建测试用的 IDLConverter
+	converter := &IDLConverter{
+		IDlConverterConfig: IDlConverterConfig{
+			IsLittleEndian: false,
+			LengthFieldLength: 4,
+		},
+	}
 	t.Run("UTF-8定长字符串_无填充", func(t *testing.T) {
 		// UTF-8 BOM: EF BB BF
 		// 内容: "Hello" (UTF-8)
@@ -19,7 +26,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, // UTF-8 终止符
 		}
 
-		result, remained, err := ParseBytesToFixedLengthString(testData, 9)
+		result, remained, err := converter.ParseBytesToFixedLengthString(testData, 9)
 		require.NoError(t, err)
 		require.Equal(t, "Hello", result)
 		require.Empty(t, remained)
@@ -38,7 +45,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, 0x00, 0x00, 0x00, // 填充字节
 		}
 
-		result, remained, err := ParseBytesToFixedLengthString(testData, 10)
+		result, remained, err := converter.ParseBytesToFixedLengthString(testData, 10)
 		require.NoError(t, err)
 		require.Equal(t, "Hi", result)
 		require.Empty(t, remained)
@@ -56,7 +63,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, 0x00, // UTF-16 终止符
 		}
 
-		result, remained, err := ParseBytesToFixedLengthString(testData, 8)
+		result, remained, err := converter.ParseBytesToFixedLengthString(testData, 8)
 		require.NoError(t, err)
 		require.Equal(t, "Go", result)
 		require.Empty(t, remained)
@@ -76,7 +83,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, 0x00, // 填充字节
 		}
 
-		result, remained, err := ParseBytesToFixedLengthString(testData, 10)
+		result, remained, err := converter.ParseBytesToFixedLengthString(testData, 10)
 		require.NoError(t, err)
 		require.Equal(t, "Hi", result)
 		require.Empty(t, remained)
@@ -94,7 +101,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, 0x00, // UTF-16 终止符
 		}
 
-		result, remained, err := ParseBytesToFixedLengthString(testData, 8)
+		result, remained, err := converter.ParseBytesToFixedLengthString(testData, 8)
 		require.NoError(t, err)
 		require.Equal(t, "Go", result)
 		require.Empty(t, remained)
@@ -114,7 +121,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, 0x00, // 填充字节
 		}
 
-		result, remained, err := ParseBytesToFixedLengthString(testData, 10)
+		result, remained, err := converter.ParseBytesToFixedLengthString(testData, 10)
 		require.NoError(t, err)
 		require.Equal(t, "Hi", result)
 		require.Empty(t, remained)
@@ -129,7 +136,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0xFF, 0xFF, 0xFF, // 剩余数据
 		}
 
-		result, remained, err := ParseBytesToFixedLengthString(testData, 9)
+		result, remained, err := converter.ParseBytesToFixedLengthString(testData, 9)
 		require.NoError(t, err)
 		require.Equal(t, "Hello", result)
 		require.Equal(t, []byte{0xFF, 0xFF, 0xFF}, remained)
@@ -148,7 +155,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, // UTF-8 终止符
 		}
 
-		result, remained, err := ParseBytesToFixedLengthString(testData, 10)
+		result, remained, err := converter.ParseBytesToFixedLengthString(testData, 10)
 		require.NoError(t, err)
 		require.Equal(t, "你好", result)
 		require.Empty(t, remained)
@@ -161,7 +168,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x00, // UTF-8 终止符
 		}
 
-		_, _, err := ParseBytesToFixedLengthString(testData, 6)
+		_, _, err := converter.ParseBytesToFixedLengthString(testData, 6)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "must start with BOM")
 	})
@@ -173,7 +180,7 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			0x48, 0x65, // "He"
 		}
 
-		_, _, err := ParseBytesToFixedLengthString(testData, 10)
+		_, _, err := converter.ParseBytesToFixedLengthString(testData, 10)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "insufficient data")
 	})
@@ -186,14 +193,21 @@ func TestParseBytesToFixedLengthString(t *testing.T) {
 			// 缺少终止符
 		}
 
-		_, _, err := ParseBytesToFixedLengthString(testData, 8)
+		_, _, err := converter.ParseBytesToFixedLengthString(testData, 8)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "terminator not found")
 	})
 }
 
-// TestParseBytesToDynamicString 测试 ParseBytesToDynamicString 函数的动态字符串解析
+// TestParseBytesToDynamicString 测试 IDLConverter.ParseBytesToDynamicStringWithConfigurableLength 方法的动态字符串解析
 func TestParseBytesToDynamicString(t *testing.T) {
+	// 创建测试用的 IDLConverter
+	converter := &IDLConverter{
+		IDlConverterConfig: IDlConverterConfig{
+			IsLittleEndian: false,
+			LengthFieldLength: 4,
+		},
+	}
 	t.Run("UTF-8动态字符串_带BOM", func(t *testing.T) {
 		// 长度字段: 00 00 00 08 (8字节，包含BOM和终止符)
 		// UTF-8 BOM: EF BB BF
@@ -206,7 +220,7 @@ func TestParseBytesToDynamicString(t *testing.T) {
 			0x00, // UTF-8 终止符
 		}
 
-		result, remained, err := ParseBytesToDynamicString(testData)
+		result, remained, err := converter.ParseBytesToDynamicString(testData)
 		require.NoError(t, err)
 		require.Equal(t, "Test", result)
 		require.Empty(t, remained)
@@ -225,7 +239,7 @@ func TestParseBytesToDynamicString(t *testing.T) {
 			0x00, 0x00, // UTF-16 终止符
 		}
 
-		result, remained, err := ParseBytesToDynamicString(testData)
+		result, remained, err := converter.ParseBytesToDynamicString(testData)
 		require.NoError(t, err)
 		require.Equal(t, "Go", result)
 		require.Empty(t, remained)
@@ -244,7 +258,7 @@ func TestParseBytesToDynamicString(t *testing.T) {
 			0x00, 0x00, // UTF-16 终止符
 		}
 
-		result, remained, err := ParseBytesToDynamicString(testData)
+		result, remained, err := converter.ParseBytesToDynamicString(testData)
 		require.NoError(t, err)
 		require.Equal(t, "Go", result)
 		require.Empty(t, remained)
@@ -264,7 +278,7 @@ func TestParseBytesToDynamicString(t *testing.T) {
 			0x00, // UTF-8 终止符
 		}
 
-		result, remained, err := ParseBytesToDynamicString(testData)
+		result, remained, err := converter.ParseBytesToDynamicString(testData)
 		require.NoError(t, err)
 		require.Equal(t, "你好", result)
 		require.Empty(t, remained)
@@ -285,7 +299,7 @@ func TestParseBytesToDynamicString(t *testing.T) {
 			0x00, 0x00, 0x00, 0x00, // 填充字节
 		}
 
-		result, remained, err := ParseBytesToDynamicString(testData)
+		result, remained, err := converter.ParseBytesToDynamicString(testData)
 		require.NoError(t, err)
 		require.Equal(t, "Hi", result)
 		require.Empty(t, remained)
@@ -298,7 +312,7 @@ func TestParseBytesToDynamicString(t *testing.T) {
 			0x00, // UTF-8 终止符
 		}
 
-		result, remained, err := ParseBytesToDynamicString(testData)
+		result, remained, err := converter.ParseBytesToDynamicString(testData)
 		require.NoError(t, err)
 		require.Equal(t, "", result)
 		require.Empty(t, remained)
