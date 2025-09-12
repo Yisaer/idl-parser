@@ -40,7 +40,7 @@ func TestConverterDecode(t *testing.T) {
 	testdata := []byte{41, 42}
 	m, err := c.Decode("a.b.c", testdata)
 	require.NoError(t, err)
-	require.Equal(t, map[string]interface{}{"id1": int64(41), "id2": int64(42)}, m)
+	require.Equal(t, map[string]interface{}{"id1": uint8(41), "id2": uint8(42)}, m)
 }
 
 func TestConverterDecodeLittleEndian(t *testing.T) {
@@ -53,14 +53,14 @@ func TestConverterDecodeLittleEndian(t *testing.T) {
 	testdata := []byte{41, 42}
 	m, err := c.Decode("a.b.c", testdata)
 	require.NoError(t, err)
-	require.Equal(t, map[string]interface{}{"id1": int64(41), "id2": int64(42)}, m)
+	require.Equal(t, map[string]interface{}{"id1": uint8(41), "id2": uint8(42)}, m)
 }
 
 func TestParseDataByType_Octet(t *testing.T) {
 	tests := []struct {
 		name           string
 		data           []byte
-		expected       int64
+		expected       uint8
 		expectedRemain []byte
 		expectError    bool
 		isLittleEndian bool
@@ -156,7 +156,7 @@ func TestParseDataByType_Short(t *testing.T) {
 	tests := []struct {
 		name           string
 		data           []byte
-		expected       int64
+		expected       int16
 		expectedRemain []byte
 		expectError    bool
 		isLittleEndian bool
@@ -225,7 +225,7 @@ func TestParseDataByType_UnsignedShort(t *testing.T) {
 	tests := []struct {
 		name           string
 		data           []byte
-		expected       int64
+		expected       uint16
 		expectedRemain []byte
 		expectError    bool
 		isLittleEndian bool
@@ -286,7 +286,7 @@ func TestParseDataByType_Long(t *testing.T) {
 	tests := []struct {
 		name           string
 		data           []byte
-		expected       int64
+		expected       int32
 		expectedRemain []byte
 		expectError    bool
 		isLittleEndian bool
@@ -347,7 +347,7 @@ func TestParseDataByType_UnsignedLong(t *testing.T) {
 	tests := []struct {
 		name           string
 		data           []byte
-		expected       int64
+		expected       uint32
 		expectedRemain []byte
 		expectError    bool
 	}{
@@ -445,7 +445,7 @@ func TestParseDataByType_UnsignedLongLong(t *testing.T) {
 	tests := []struct {
 		name           string
 		data           []byte
-		expected       int64
+		expected       uint64
 		expectedRemain []byte
 		expectError    bool
 	}{
@@ -626,7 +626,7 @@ func TestParseDataByType_SequenceOfShort(t *testing.T) {
 		{
 			name:           "parse sequence with 2 short elements",
 			data:           []byte{0, 0, 0, 2, 0x12, 0x34, 0x56, 0x78, 100, 200},
-			expected:       []interface{}{int64(0x1234), int64(0x5678)},
+			expected:       []interface{}{int16(0x1234), int16(0x5678)},
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
 		},
@@ -885,8 +885,8 @@ func TestConverterDecodeComplexStruct(t *testing.T) {
 
 		m, err := c.Decode("a.b.complex", testdata)
 		require.NoError(t, err)
-		require.Equal(t, int64(12345), m["id"])
-		require.Equal(t, int64(1234567890), m["timestamp"])
+		require.Equal(t, int16(12345), m["id"])
+		require.Equal(t, int32(1234567890), m["timestamp"])
 		require.InDelta(t, 3.14, m["value"], 0.001) // 使用 InDelta 比较浮点数
 	})
 
@@ -908,8 +908,8 @@ func TestConverterDecodeComplexStruct(t *testing.T) {
 
 		m, err := c.Decode("a.b.complex", testdata)
 		require.NoError(t, err)
-		require.Equal(t, int64(12345), m["id"])
-		require.Equal(t, int64(1234567890), m["timestamp"])
+		require.Equal(t, int16(12345), m["id"])
+		require.Equal(t, int32(1234567890), m["timestamp"])
 		require.InDelta(t, 3.14, m["value"], 0.001) // 使用 InDelta 比较浮点数
 	})
 }
