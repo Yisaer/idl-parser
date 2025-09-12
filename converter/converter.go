@@ -497,13 +497,13 @@ func (c *IDLConverter) parseString(data []byte, st typeref.StringType, _ ast.Mod
 	var result interface{}
 	var remained []byte
 	var err error
-	
+
 	if st.Length != nil {
 		result, remained, err = c.ParseBytesToFixedLengthString(data, *st.Length)
 	} else {
 		result, remained, err = c.ParseBytesToDynamicString(data)
 	}
-	
+
 	if err == nil {
 		parsedBytes := beforeParse - len(remained)
 		c.ParsedBytes += parsedBytes
