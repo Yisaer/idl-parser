@@ -352,7 +352,24 @@ func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, modu
 	result := make([]interface{}, 0, arrayType.ArraySize)
 
 	for i := 0; i < arrayType.ArraySize; i++ {
-		v, remained, err = c.parseDataByType(remained, arrayType.InnerType, module)
+		// 直接调用具体的解析方法，避免通过 parseDataByType 重复计算 ParsedBytes
+		switch arrayType.InnerType.TypeRefType() {
+		case typ.ShortType:
+			short := arrayType.InnerType.(typeref.ShortType)
+			v, remained, err = c.parseShort(remained, short, module)
+		case typ.OctetType:
+			ot := arrayType.InnerType.(typeref.OctetType)
+			v, remained, err = c.parseOctet(remained, ot, module)
+		case typ.LongType:
+			long := arrayType.InnerType.(typeref.LongType)
+			v, remained, err = c.parseLong(remained, long, module)
+		case typ.BooleanType:
+			boolean := arrayType.InnerType.(typeref.BooleanType)
+			v, remained, err = c.parseBoolean(remained, boolean, module)
+		default:
+			// 对于其他类型，仍然使用 parseDataByType
+			v, remained, err = c.parseDataByType(remained, arrayType.InnerType, module)
+		}
 		if err != nil {
 			return nil, nil, fmt.Errorf("parse array element %v error:%v", i, err.Error())
 		}
@@ -362,50 +379,122 @@ func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, modu
 }
 
 func (c *IDLConverter) parseOctet(data []byte, ot typeref.OctetType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToUint8(data)
+	beforeParse := len(data)
+	result, remained, err := c.parseBytesToUint8(data)
+	if err == nil {
+		parsedBytes := beforeParse - len(remained)
+		c.ParsedBytes += parsedBytes
+	}
+	return result, remained, err
 }
 
 func (c *IDLConverter) parseShort(data []byte, short typeref.ShortType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToInt16(data)
+	beforeParse := len(data)
+	result, remained, err := c.parseBytesToInt16(data)
+	if err == nil {
+		parsedBytes := beforeParse - len(remained)
+		c.ParsedBytes += parsedBytes
+	}
+	return result, remained, err
 }
 
 func (c *IDLConverter) parseUnsignedShort(data []byte, unsignedShort typeref.UnsignedShortType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToUint16(data)
+	beforeParse := len(data)
+	result, remained, err := c.parseBytesToUint16(data)
+	if err == nil {
+		parsedBytes := beforeParse - len(remained)
+		c.ParsedBytes += parsedBytes
+	}
+	return result, remained, err
 }
 
 func (c *IDLConverter) parseLong(data []byte, long typeref.LongType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToInt32(data)
+	beforeParse := len(data)
+	result, remained, err := c.parseBytesToInt32(data)
+	if err == nil {
+		parsedBytes := beforeParse - len(remained)
+		c.ParsedBytes += parsedBytes
+	}
+	return result, remained, err
 }
 
 func (c *IDLConverter) parseUnsignedLong(data []byte, unsignedLong typeref.UnsignedLongType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToUint32(data)
+	beforeParse := len(data)
+	result, remained, err := c.parseBytesToUint32(data)
+	if err == nil {
+		parsedBytes := beforeParse - len(remained)
+		c.ParsedBytes += parsedBytes
+	}
+	return result, remained, err
 }
 
 func (c *IDLConverter) parseLongLong(data []byte, longLong typeref.LongLongType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToInt64(data)
+	beforeParse := len(data)
+	result, remained, err := c.parseBytesToInt64(data)
+	if err == nil {
+		parsedBytes := beforeParse - len(remained)
+		c.ParsedBytes += parsedBytes
+	}
+	return result, remained, err
 }
 
 func (c *IDLConverter) parseUnsignedLongLong(data []byte, unsignedLongLong typeref.UnsignedLongLongType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToUint64(data)
+	beforeParse := len(data)
+	result, remained, err := c.parseBytesToUint64(data)
+	if err == nil {
+		parsedBytes := beforeParse - len(remained)
+		c.ParsedBytes += parsedBytes
+	}
+	return result, remained, err
 }
 
 func (c *IDLConverter) parseBoolean(data []byte, boolean typeref.BooleanType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToBoolean(data)
+	beforeParse := len(data)
+	result, remained, err := c.parseBytesToBoolean(data)
+	if err == nil {
+		parsedBytes := beforeParse - len(remained)
+		c.ParsedBytes += parsedBytes
+	}
+	return result, remained, err
 }
 
 func (c *IDLConverter) parseFloat(data []byte, float typeref.FloatType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToFloat32(data)
+	beforeParse := len(data)
+	result, remained, err := c.parseBytesToFloat32(data)
+	if err == nil {
+		parsedBytes := beforeParse - len(remained)
+		c.ParsedBytes += parsedBytes
+	}
+	return result, remained, err
 }
 
 func (c *IDLConverter) parseDouble(data []byte, float typeref.DoubleType, _ ast.Module) (interface{}, []byte, error) {
-	return c.parseBytesToFloat64(data)
+	beforeParse := len(data)
+	result, remained, err := c.parseBytesToFloat64(data)
+	if err == nil {
+		parsedBytes := beforeParse - len(remained)
+		c.ParsedBytes += parsedBytes
+	}
+	return result, remained, err
 }
 
 func (c *IDLConverter) parseString(data []byte, st typeref.StringType, _ ast.Module) (interface{}, []byte, error) {
+	beforeParse := len(data)
+	var result interface{}
+	var remained []byte
+	var err error
+	
 	if st.Length != nil {
-		return c.ParseBytesToFixedLengthString(data, *st.Length)
+		result, remained, err = c.ParseBytesToFixedLengthString(data, *st.Length)
+	} else {
+		result, remained, err = c.ParseBytesToDynamicString(data)
 	}
-	return c.ParseBytesToDynamicString(data)
+	
+	if err == nil {
+		parsedBytes := beforeParse - len(remained)
+		c.ParsedBytes += parsedBytes
+	}
+	return result, remained, err
 }
 
 func (c *IDLConverter) parseSelfDefineType(data []byte, definedType typeref.TypeName, module ast.Module) (interface{}, []byte, error) {
