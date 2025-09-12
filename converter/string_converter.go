@@ -195,7 +195,7 @@ func (c *IDLConverter) ParseBytesToDynamicString(data []byte) (value string, rem
 
 	// 3. 提取字符串数据
 	stringData := remainedAfterLength[:lengthField]
-	totalConsumed := len(data) - len(remainedAfterLength) + lengthField
+	remainedAfterString := remainedAfterLength[lengthField:]
 
 	// 4. 解析字符串内容
 	content, err := parseDynamicStringContent(stringData)
@@ -204,7 +204,7 @@ func (c *IDLConverter) ParseBytesToDynamicString(data []byte) (value string, rem
 	}
 
 	// 5. 返回解析结果和剩余数据
-	return content, data[totalConsumed:], nil
+	return content, remainedAfterString, nil
 }
 
 func (c *IDLConverter) ParseBytesToFixedLengthString(data []byte, fixedLength int) (value string, remained []byte, err error) {

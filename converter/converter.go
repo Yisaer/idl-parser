@@ -22,6 +22,9 @@ type IDlConverterConfig struct {
 type IDLConverter struct {
 	IDlConverterConfig
 	Module ast.Module
+	// 解析进度跟踪
+	TotalBytes  int // 总字节数
+	ParsedBytes int // 已解析字节数
 }
 
 func NewIDLConverterWithModule(Config IDlConverterConfig, module ast.Module) (*IDLConverter, error) {
@@ -214,6 +217,9 @@ func (c *IDLConverter) IsSchemaIDExist(schemaID string) bool {
 }
 
 func (c *IDLConverter) Decode(schemaID string, data []byte) (map[string]interface{}, error) {
+	// 初始化进度跟踪
+	c.TotalBytes = len(data)
+	c.ParsedBytes = 0
 	targetSts, targetModule, err := c.travelModule(schemaID)
 	if err != nil {
 		return nil, err
@@ -222,88 +228,121 @@ func (c *IDLConverter) Decode(schemaID string, data []byte) (map[string]interfac
 	return v, err
 }
 
+// GetParsingProgress 获取解析进度
+func (c *IDLConverter) GetParsingProgress() (parsedBytes int, totalBytes int, progressPercent float64) {
+	if c.TotalBytes == 0 {
+		return 0, 0, 0.0
+	}
+	progressPercent = float64(c.ParsedBytes) / float64(c.TotalBytes) * 100.0
+	return c.ParsedBytes, c.TotalBytes, progressPercent
+}
+
+// GetParsedBytes 获取已解析的字节数
+func (c *IDLConverter) GetParsedBytes() int {
+	return c.ParsedBytes
+}
+
+// GetTotalBytes 获取总字节数
+func (c *IDLConverter) GetTotalBytes() int {
+	return c.TotalBytes
+}
+
 func (c *IDLConverter) parseDataByType(data []byte, t typeref.TypeRef, module ast.Module) (interface{}, []byte, error) {
+	// 记录解析前的字节数
+	beforeParse := len(data)
+
+	var result interface{}
+	var remained []byte
+	var err error
+
 	switch t.TypeRefType() {
 	case typ.ArrayType:
 		arrayType, ok := t.(typeref.ArrayType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not array type", t.TypeRefType())
 		}
-		return c.parseArray(data, arrayType, module)
+		result, remained, err = c.parseArray(data, arrayType, module)
 	case typ.OctetType:
 		ot, ok := t.(typeref.OctetType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not octet type", t.TypeRefType())
 		}
-		return c.parseOctet(data, ot, module)
+		result, remained, err = c.parseOctet(data, ot, module)
 	case typ.ShortType:
 		short, ok := t.(typeref.ShortType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not short type", t.TypeRefType())
 		}
-		return c.parseShort(data, short, module)
+		result, remained, err = c.parseShort(data, short, module)
 	case typ.UnsignedShortType:
 		unsignedShort, ok := t.(typeref.UnsignedShortType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not unsigned short type", t.TypeRefType())
 		}
-		return c.parseUnsignedShort(data, unsignedShort, module)
+		result, remained, err = c.parseUnsignedShort(data, unsignedShort, module)
 	case typ.LongType:
 		long, ok := t.(typeref.LongType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not long type", t.TypeRefType())
 		}
-		return c.parseLong(data, long, module)
+		result, remained, err = c.parseLong(data, long, module)
 	case typ.UnsignedLongType:
 		unsignedLong, ok := t.(typeref.UnsignedLongType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not unsigned long type", t.TypeRefType())
 		}
-		return c.parseUnsignedLong(data, unsignedLong, module)
+		result, remained, err = c.parseUnsignedLong(data, unsignedLong, module)
 	case typ.LongLongType:
 		longLong, ok := t.(typeref.LongLongType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not long long type", t.TypeRefType())
 		}
-		return c.parseLongLong(data, longLong, module)
+		result, remained, err = c.parseLongLong(data, longLong, module)
 	case typ.UnsignedLongLongType:
 		unsignedLongLong, ok := t.(typeref.UnsignedLongLongType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not unsigned long long type", t.TypeRefType())
 		}
-		return c.parseUnsignedLongLong(data, unsignedLongLong, module)
+		result, remained, err = c.parseUnsignedLongLong(data, unsignedLongLong, module)
 	case typ.BooleanType:
 		boolean, ok := t.(typeref.BooleanType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not boolean type", t.TypeRefType())
 		}
-		return c.parseBoolean(data, boolean, module)
+		result, remained, err = c.parseBoolean(data, boolean, module)
 	case typ.FloatType:
 		float, ok := t.(typeref.FloatType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not float type", t.TypeRefType())
 		}
-		return c.parseFloat(data, float, module)
+		result, remained, err = c.parseFloat(data, float, module)
 	case typ.DoubleType:
 		double, ok := t.(typeref.DoubleType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not double type", t.TypeRefType())
 		}
-		return c.parseDouble(data, double, module)
+		result, remained, err = c.parseDouble(data, double, module)
 	case typ.SequenceType:
 		seq := t.(typeref.Sequence)
-		return c.parseBytesToList(data, seq, module)
+		result, remained, err = c.parseBytesToList(data, seq, module)
 	case typ.StringType:
 		st, ok := t.(typeref.StringType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not string type", t.TypeRefType())
 		}
-		return c.parseString(data, st, module)
+		result, remained, err = c.parseString(data, st, module)
 	case typ.SelfDefinedTypeType:
 		definedType := t.(typeref.TypeName)
-		return c.parseSelfDefineType(data, definedType, module)
+		result, remained, err = c.parseSelfDefineType(data, definedType, module)
+	default:
+		return nil, nil, fmt.Errorf("unsupported type:%v", t.TypeName())
 	}
-	return nil, nil, fmt.Errorf("unsupported type:%v", t.TypeName())
+	if err == nil {
+		parsedBytes := beforeParse - len(remained)
+		c.ParsedBytes += parsedBytes
+	}
+
+	return result, remained, err
 }
 
 func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, module ast.Module) ([]interface{}, []byte, error) {
