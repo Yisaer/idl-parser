@@ -35,7 +35,7 @@ func TestParseOctet(t *testing.T) {
 	}
 	
 	// 验证解析结果
-	if result != int64(0x42) {
+	if result != uint8(0x42) {
 		t.Errorf("Expected result 0x42, got %v", result)
 	}
 	
@@ -74,7 +74,7 @@ func TestParseShort(t *testing.T) {
 	}
 	
 	// 验证解析结果 (big endian: 0x1234 = 4660)
-	if result != int64(4660) {
+	if result != int16(4660) {
 		t.Errorf("Expected result 4660, got %v", result)
 	}
 	
@@ -113,7 +113,7 @@ func TestParseShortLittleEndian(t *testing.T) {
 	}
 	
 	// 验证解析结果 (little endian: 0x1234 = 4660)
-	if result != int64(4660) {
+	if result != int16(4660) {
 		t.Errorf("Expected result 4660, got %v", result)
 	}
 	
@@ -152,7 +152,7 @@ func TestParseUnsignedShort(t *testing.T) {
 	}
 	
 	// 验证解析结果 (0xFFFF = 65535)
-	if result != int64(65535) {
+	if result != uint16(65535) {
 		t.Errorf("Expected result 65535, got %v", result)
 	}
 	
@@ -191,7 +191,7 @@ func TestParseLong(t *testing.T) {
 	}
 	
 	// 验证解析结果 (big endian: 0x12345678 = 305419896)
-	if result != int64(305419896) {
+	if result != int32(305419896) {
 		t.Errorf("Expected result 305419896, got %v", result)
 	}
 	
@@ -230,7 +230,7 @@ func TestParseUnsignedLong(t *testing.T) {
 	}
 	
 	// 验证解析结果 (0xFFFFFFFF = 4294967295)
-	if result != int64(4294967295) {
+	if result != uint32(4294967295) {
 		t.Errorf("Expected result 4294967295, got %v", result)
 	}
 	
@@ -308,8 +308,8 @@ func TestParseUnsignedLongLong(t *testing.T) {
 		return
 	}
 	
-	// 验证解析结果 (0xFFFFFFFFFFFFFFFF = -1 in int64)
-	expectedResult := int64(-1)
+	// 验证解析结果 (0xFFFFFFFFFFFFFFFF = 18446744073709551615 in uint64)
+	expectedResult := uint64(0xFFFFFFFFFFFFFFFF)
 	if result != expectedResult {
 		t.Errorf("Expected result %d, got %v", expectedResult, result)
 	}

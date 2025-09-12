@@ -21,13 +21,13 @@ func TestParseArrayTypes(t *testing.T) {
 			name:     "short array [8]",
 			typeStr:  "short[8]",
 			data:     []byte{0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, 0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08},
-			expected: []interface{}{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6), int64(7), int64(8)},
+			expected: []interface{}{int16(1), int16(2), int16(3), int16(4), int16(5), int16(6), int16(7), int16(8)},
 		},
 		{
 			name:     "long array [4]",
 			typeStr:  "long[4]",
 			data:     []byte{0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x04},
-			expected: []interface{}{int64(1), int64(2), int64(3), int64(4)},
+			expected: []interface{}{int32(1), int32(2), int32(3), int32(4)},
 		},
 		{
 			name:     "boolean array [3]",
@@ -39,7 +39,7 @@ func TestParseArrayTypes(t *testing.T) {
 			name:     "unsigned short array [2]",
 			typeStr:  "unsigned short[2]",
 			data:     []byte{0x00, 0x01, 0x00, 0x02},
-			expected: []interface{}{int64(1), int64(2)},
+			expected: []interface{}{uint16(1), uint16(2)},
 		},
 	}
 
@@ -68,13 +68,13 @@ func TestParseArrayTypesLittleEndian(t *testing.T) {
 			name:     "short array [4] little endian",
 			typeStr:  "short[4]",
 			data:     []byte{0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00},
-			expected: []interface{}{int64(1), int64(2), int64(3), int64(4)},
+			expected: []interface{}{int16(1), int16(2), int16(3), int16(4)},
 		},
 		{
 			name:     "long array [2] little endian",
 			typeStr:  "long[2]",
 			data:     []byte{0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00},
-			expected: []interface{}{int64(1), int64(2)},
+			expected: []interface{}{int32(1), int32(2)},
 		},
 	}
 
