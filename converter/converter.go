@@ -17,6 +17,7 @@ type IDlConverterConfig struct {
 	IsLittleEndian    bool
 	LengthFieldLength int // should be 1,2,4 bytes
 	SchemaPath        string
+	PaddingLength     int // should be 1,2,4,8,16,32,64
 }
 
 type IDLConverter struct {
@@ -61,6 +62,12 @@ func (c *IDLConverter) verifyConfig() error {
 		break
 	default:
 		return errors.New("invalid length field, should be 1, 2 or 4")
+	}
+	switch c.PaddingLength {
+	case 1, 2, 4, 8, 32, 64:
+		break
+	default:
+		return errors.New("invalid padding length field, should be 1, 2, 4, 16, 32, 64")
 	}
 	return nil
 }
@@ -408,6 +415,10 @@ func (c *IDLConverter) parseString(data []byte, st typeref.StringType, _ ast.Mod
 		if err != nil {
 			return nil, nil, err
 		}
+		remained, err = c.consumePadding(remained, isLast)
+		if err != nil {
+			return nil, nil, fmt.Errorf("consuming dynamic string field meet error:%v", err.Error())
+		}
 	}
 	return result, remained, nil
 }
@@ -420,4 +431,19 @@ func (c *IDLConverter) parseSelfDefineType(data []byte, definedType typeref.Type
 		}
 	}
 	return nil, nil, fmt.Errorf("unsupported type:%v", definedType.Name)
+}
+
+func (c *IDLConverter) consumePadding(remained []byte, isLast bool) ([]byte, error) {
+	if len(remained) > 0 && !isLast {
+		consumedBytes := c.TotalBytes - len(remained)
+		extraBytesLength := consumedBytes % c.PaddingLength
+		paddingBytesLength := c.PaddingLength - extraBytesLength
+		if paddingBytesLength > len(remained) {
+			return remained, fmt.Errorf("padding length exceeds remained length")
+		}
+		if extraBytesLength > 0 {
+			return remained[paddingBytesLength:], nil
+		}
+	}
+	return remained, nil
 }

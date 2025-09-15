@@ -17,6 +17,7 @@ func createTestConverter(isLittleEndian bool) *IDLConverter {
 		IDlConverterConfig: IDlConverterConfig{
 			IsLittleEndian:    isLittleEndian,
 			LengthFieldLength: 4,
+			PaddingLength:     1,
 		},
 	}
 }
@@ -26,6 +27,7 @@ func TestConverterStsDecode(t *testing.T) {
 		IsLittleEndian:    false,
 		LengthFieldLength: 4,
 		SchemaPath:        "./testdata/test_sts.idl",
+		PaddingLength:     1,
 	})
 	require.NoError(t, err)
 }
@@ -35,6 +37,7 @@ func TestConverterDecode(t *testing.T) {
 		IsLittleEndian:    false,
 		LengthFieldLength: 4,
 		SchemaPath:        "./testdata/test.idl",
+		PaddingLength:     1,
 	})
 	require.NoError(t, err)
 	testdata := []byte{41, 42}
@@ -48,6 +51,7 @@ func TestConverterDecodeLittleEndian(t *testing.T) {
 		IsLittleEndian:    true,
 		LengthFieldLength: 4,
 		SchemaPath:        "./testdata/test.idl",
+		PaddingLength:     1,
 	})
 	require.NoError(t, err)
 	testdata := []byte{41, 42}
@@ -872,6 +876,7 @@ func TestConverterDecodeComplexStruct(t *testing.T) {
 		c, err := NewIDLConverter(IDlConverterConfig{
 			IsLittleEndian:    false,
 			LengthFieldLength: 4,
+			PaddingLength:     1,
 			SchemaPath:        "./testdata/test_complex.idl",
 		})
 		require.NoError(t, err)
@@ -895,6 +900,7 @@ func TestConverterDecodeComplexStruct(t *testing.T) {
 		c, err := NewIDLConverter(IDlConverterConfig{
 			IsLittleEndian:    true,
 			LengthFieldLength: 4,
+			PaddingLength:     1,
 			SchemaPath:        "./testdata/test_complex.idl",
 		})
 		require.NoError(t, err)

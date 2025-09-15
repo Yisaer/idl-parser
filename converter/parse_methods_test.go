@@ -13,6 +13,7 @@ func createTestConverterForParseTests(isLittleEndian bool) *IDLConverter {
 		IDlConverterConfig: IDlConverterConfig{
 			IsLittleEndian:    isLittleEndian,
 			LengthFieldLength: 4,
+			PaddingLength:     1,
 		},
 	}
 }

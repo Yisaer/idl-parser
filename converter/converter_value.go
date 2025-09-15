@@ -165,7 +165,7 @@ func (c *IDLConverter) parseBytesToFloat64(data []byte) (float64, []byte, error)
 	return value, remainData, nil
 }
 
-func (c *IDLConverter) parseBytesToList(data []byte, seqType typeref.Sequence, module ast.Module, isParLast bool) ([]interface{}, []byte, error) {
+func (c *IDLConverter) parseBytesToList(data []byte, seqType typeref.Sequence, module ast.Module, isLast bool) ([]interface{}, []byte, error) {
 	sequenceLen, remained, err := c.parseBytesToLength(data)
 	if err != nil {
 		return nil, nil, err
@@ -173,11 +173,15 @@ func (c *IDLConverter) parseBytesToList(data []byte, seqType typeref.Sequence, m
 	result := make([]interface{}, 0, sequenceLen)
 	var v interface{}
 	for i := 0; i < int(sequenceLen); i++ {
-		v, remained, err = c.parseDataByType(remained, seqType.InnerType, module, isParLast && i == sequenceLen-1)
+		v, remained, err = c.parseDataByType(remained, seqType.InnerType, module, isLast && i == sequenceLen-1)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parse sequence %v error:%v", seqType.InnerType, err.Error())
 		}
 		result = append(result, v)
+	}
+	remained, err = c.consumePadding(remained, isLast)
+	if err != nil {
+		return nil, nil, err
 	}
 	return result, remained, nil
 }
