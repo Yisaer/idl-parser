@@ -21,10 +21,8 @@ type IDlConverterConfig struct {
 
 type IDLConverter struct {
 	IDlConverterConfig
-	Module ast.Module
-	// 解析进度跟踪
-	TotalBytes  int // 总字节数
-	ParsedBytes int // 已解析字节数
+	Module     ast.Module
+	TotalBytes int
 }
 
 func NewIDLConverterWithModule(Config IDlConverterConfig, module ast.Module) (*IDLConverter, error) {
@@ -169,6 +167,9 @@ func (c *IDLConverter) verifyStruct(module ast.Module) error {
 }
 
 func (c *IDLConverter) verifyStructField(st struct_type.Struct) error {
+	if len(st.Fields) < 1 {
+		return fmt.Errorf("struct %v has no fields", st)
+	}
 	for _, field := range st.Fields {
 		if !isSupportedTyp(field.Type.TypeRefType()) {
 			return fmt.Errorf("st %v has unsupported field %v", st.Name, field.Name)
@@ -217,39 +218,16 @@ func (c *IDLConverter) IsSchemaIDExist(schemaID string) bool {
 }
 
 func (c *IDLConverter) Decode(schemaID string, data []byte) (map[string]interface{}, error) {
-	// 初始化进度跟踪
-	c.TotalBytes = len(data)
-	c.ParsedBytes = 0
 	targetSts, targetModule, err := c.travelModule(schemaID)
 	if err != nil {
 		return nil, err
 	}
-	v, _, err := c.parseBytesToStruct(data, *targetSts, *targetModule)
+	c.TotalBytes = len(data)
+	v, _, err := c.parseBytesToStruct(data, *targetSts, *targetModule, true)
 	return v, err
 }
 
-// GetParsingProgress 获取解析进度
-func (c *IDLConverter) GetParsingProgress() (parsedBytes int, totalBytes int, progressPercent float64) {
-	if c.TotalBytes == 0 {
-		return 0, 0, 0.0
-	}
-	progressPercent = float64(c.ParsedBytes) / float64(c.TotalBytes) * 100.0
-	return c.ParsedBytes, c.TotalBytes, progressPercent
-}
-
-// GetParsedBytes 获取已解析的字节数
-func (c *IDLConverter) GetParsedBytes() int {
-	return c.ParsedBytes
-}
-
-// GetTotalBytes 获取总字节数
-func (c *IDLConverter) GetTotalBytes() int {
-	return c.TotalBytes
-}
-
-func (c *IDLConverter) parseDataByType(data []byte, t typeref.TypeRef, module ast.Module) (interface{}, []byte, error) {
-	// 记录解析前的字节数
-	beforeParse := len(data)
+func (c *IDLConverter) parseDataByType(data []byte, t typeref.TypeRef, module ast.Module, isLastField bool) (interface{}, []byte, error) {
 
 	var result interface{}
 	var remained []byte
@@ -261,7 +239,7 @@ func (c *IDLConverter) parseDataByType(data []byte, t typeref.TypeRef, module as
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not array type", t.TypeRefType())
 		}
-		result, remained, err = c.parseArray(data, arrayType, module)
+		result, remained, err = c.parseArray(data, arrayType, module, isLastField)
 	case typ.OctetType:
 		ot, ok := t.(typeref.OctetType)
 		if !ok {
@@ -334,56 +312,32 @@ func (c *IDLConverter) parseDataByType(data []byte, t typeref.TypeRef, module as
 		result, remained, err = doubleResult, newRemained, newErr
 	case typ.SequenceType:
 		seq := t.(typeref.Sequence)
-		result, remained, err = c.parseBytesToList(data, seq, module)
+		result, remained, err = c.parseBytesToList(data, seq, module, isLastField)
 	case typ.StringType:
 		st, ok := t.(typeref.StringType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not string type", t.TypeRefType())
 		}
-		result, remained, err = c.parseString(data, st, module)
+		result, remained, err = c.parseString(data, st, module, isLastField)
 	case typ.SelfDefinedTypeType:
 		definedType := t.(typeref.TypeName)
-		result, remained, err = c.parseSelfDefineType(data, definedType, module)
+		result, remained, err = c.parseSelfDefineType(data, definedType, module, isLastField)
 	default:
 		return nil, nil, fmt.Errorf("unsupported type:%v", t.TypeName())
 	}
-	if err == nil {
-		parsedBytes := beforeParse - len(remained)
-		c.ParsedBytes += parsedBytes
+	if err != nil {
+		return nil, nil, err
 	}
-
-	return result, remained, err
+	return result, remained, nil
 }
 
-func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, module ast.Module) ([]interface{}, []byte, error) {
+func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, module ast.Module, isParLast bool) ([]interface{}, []byte, error) {
 	remained := data
 	var err error
 	var v interface{}
 	result := make([]interface{}, 0, arrayType.ArraySize)
-
 	for i := 0; i < arrayType.ArraySize; i++ {
-		// 直接调用具体的解析方法，避免通过 parseDataByType 重复计算 ParsedBytes
-		switch arrayType.InnerType.TypeRefType() {
-		case typ.ShortType:
-			short := arrayType.InnerType.(typeref.ShortType)
-			shortResult, newRemained, newErr := c.parseShort(remained, short, module)
-			v, remained, err = shortResult, newRemained, newErr
-		case typ.OctetType:
-			ot := arrayType.InnerType.(typeref.OctetType)
-			octetResult, newRemained, newErr := c.parseOctet(remained, ot, module)
-			v, remained, err = octetResult, newRemained, newErr
-		case typ.LongType:
-			long := arrayType.InnerType.(typeref.LongType)
-			longResult, newRemained, newErr := c.parseLong(remained, long, module)
-			v, remained, err = longResult, newRemained, newErr
-		case typ.BooleanType:
-			boolean := arrayType.InnerType.(typeref.BooleanType)
-			boolResult, newRemained, newErr := c.parseBoolean(remained, boolean, module)
-			v, remained, err = boolResult, newRemained, newErr
-		default:
-			// 对于其他类型，仍然使用 parseDataByType
-			v, remained, err = c.parseDataByType(remained, arrayType.InnerType, module)
-		}
+		v, remained, err = c.parseDataByType(remained, arrayType.InnerType, module, isParLast && i == arrayType.ArraySize-1)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parse array element %v error:%v", i, err.Error())
 		}
@@ -393,107 +347,56 @@ func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, modu
 }
 
 func (c *IDLConverter) parseOctet(data []byte, ot typeref.OctetType, _ ast.Module) (uint8, []byte, error) {
-	beforeParse := len(data)
 	result, remained, err := c.parseBytesToUint8(data)
-	if err == nil {
-		parsedBytes := beforeParse - len(remained)
-		c.ParsedBytes += parsedBytes
-	}
 	return uint8(result), remained, err
 }
 
 func (c *IDLConverter) parseShort(data []byte, short typeref.ShortType, _ ast.Module) (int16, []byte, error) {
-	beforeParse := len(data)
 	result, remained, err := c.parseBytesToInt16(data)
-	if err == nil {
-		parsedBytes := beforeParse - len(remained)
-		c.ParsedBytes += parsedBytes
-	}
 	return int16(result), remained, err
 }
 
 func (c *IDLConverter) parseUnsignedShort(data []byte, unsignedShort typeref.UnsignedShortType, _ ast.Module) (uint16, []byte, error) {
-	beforeParse := len(data)
 	result, remained, err := c.parseBytesToUint16(data)
-	if err == nil {
-		parsedBytes := beforeParse - len(remained)
-		c.ParsedBytes += parsedBytes
-	}
 	return uint16(result), remained, err
 }
 
 func (c *IDLConverter) parseLong(data []byte, long typeref.LongType, _ ast.Module) (int32, []byte, error) {
-	beforeParse := len(data)
 	result, remained, err := c.parseBytesToInt32(data)
-	if err == nil {
-		parsedBytes := beforeParse - len(remained)
-		c.ParsedBytes += parsedBytes
-	}
 	return int32(result), remained, err
 }
 
 func (c *IDLConverter) parseUnsignedLong(data []byte, unsignedLong typeref.UnsignedLongType, _ ast.Module) (uint32, []byte, error) {
-	beforeParse := len(data)
 	result, remained, err := c.parseBytesToUint32(data)
-	if err == nil {
-		parsedBytes := beforeParse - len(remained)
-		c.ParsedBytes += parsedBytes
-	}
 	return uint32(result), remained, err
 }
 
 func (c *IDLConverter) parseLongLong(data []byte, longLong typeref.LongLongType, _ ast.Module) (int64, []byte, error) {
-	beforeParse := len(data)
 	result, remained, err := c.parseBytesToInt64(data)
-	if err == nil {
-		parsedBytes := beforeParse - len(remained)
-		c.ParsedBytes += parsedBytes
-	}
 	return result, remained, err
 }
 
 func (c *IDLConverter) parseUnsignedLongLong(data []byte, unsignedLongLong typeref.UnsignedLongLongType, _ ast.Module) (uint64, []byte, error) {
-	beforeParse := len(data)
 	result, remained, err := c.parseBytesToUint64(data)
-	if err == nil {
-		parsedBytes := beforeParse - len(remained)
-		c.ParsedBytes += parsedBytes
-	}
 	return uint64(result), remained, err
 }
 
 func (c *IDLConverter) parseBoolean(data []byte, boolean typeref.BooleanType, _ ast.Module) (bool, []byte, error) {
-	beforeParse := len(data)
 	result, remained, err := c.parseBytesToBoolean(data)
-	if err == nil {
-		parsedBytes := beforeParse - len(remained)
-		c.ParsedBytes += parsedBytes
-	}
 	return result, remained, err
 }
 
 func (c *IDLConverter) parseFloat(data []byte, float typeref.FloatType, _ ast.Module) (float32, []byte, error) {
-	beforeParse := len(data)
 	result, remained, err := c.parseBytesToFloat32(data)
-	if err == nil {
-		parsedBytes := beforeParse - len(remained)
-		c.ParsedBytes += parsedBytes
-	}
 	return result, remained, err
 }
 
 func (c *IDLConverter) parseDouble(data []byte, float typeref.DoubleType, _ ast.Module) (float64, []byte, error) {
-	beforeParse := len(data)
 	result, remained, err := c.parseBytesToFloat64(data)
-	if err == nil {
-		parsedBytes := beforeParse - len(remained)
-		c.ParsedBytes += parsedBytes
-	}
 	return result, remained, err
 }
 
-func (c *IDLConverter) parseString(data []byte, st typeref.StringType, _ ast.Module) (interface{}, []byte, error) {
-	beforeParse := len(data)
+func (c *IDLConverter) parseString(data []byte, st typeref.StringType, _ ast.Module, isLast bool) (interface{}, []byte, error) {
 	var result interface{}
 	var remained []byte
 	var err error
@@ -502,20 +405,18 @@ func (c *IDLConverter) parseString(data []byte, st typeref.StringType, _ ast.Mod
 		result, remained, err = c.ParseBytesToFixedLengthString(data, *st.Length)
 	} else {
 		result, remained, err = c.ParseBytesToDynamicString(data)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
-
-	if err == nil {
-		parsedBytes := beforeParse - len(remained)
-		c.ParsedBytes += parsedBytes
-	}
-	return result, remained, err
+	return result, remained, nil
 }
 
-func (c *IDLConverter) parseSelfDefineType(data []byte, definedType typeref.TypeName, module ast.Module) (interface{}, []byte, error) {
+func (c *IDLConverter) parseSelfDefineType(data []byte, definedType typeref.TypeName, module ast.Module, isParLast bool) (interface{}, []byte, error) {
 	for _, content := range module.Content {
 		if content.GetName() == definedType.Name && content.ModuleContentType() == typ.StructType {
 			st := content.(struct_type.Struct)
-			return c.parseBytesToStruct(data, st, module)
+			return c.parseBytesToStruct(data, st, module, isParLast)
 		}
 	}
 	return nil, nil, fmt.Errorf("unsupported type:%v", definedType.Name)
