@@ -181,10 +181,11 @@ func (c *IDLConverter) verifyStructField(st struct_type.Struct) error {
 		if !isSupportedTyp(field.Type.TypeRefType()) {
 			return fmt.Errorf("st %v has unsupported field %v", st.Name, field.Name)
 		}
-		strTyp, ok := field.Type.(typeref.StringType)
-		if ok && strTyp.Length == nil {
-			return fmt.Errorf("st:%v not support field %v, dynamic string", st.Name, field.Name)
-		}
+		// 注释掉动态字符串的验证，以支持动态字符串字段
+		// strTyp, ok := field.Type.(typeref.StringType)
+		// if ok && strTyp.Length == nil {
+		// 	return fmt.Errorf("st:%v not support field %v, dynamic string", st.Name, field.Name)
+		// }
 	}
 	return nil
 }
