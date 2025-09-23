@@ -4,11 +4,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
 	"github.com/yisaer/idl-parser/ast"
 	"github.com/yisaer/idl-parser/ast/typeref"
 )
 
-// TestParseStringPadding 测试 parseString 方法中动态字符串的 padding 功能
+// TestParseStringPadding 测试 ParseString 方法中动态字符串的 padding 功能
 func TestParseStringPadding(t *testing.T) {
 	t.Run("非最后一个字段_需要padding", func(t *testing.T) {
 		// 测试场景：动态字符串不是最后一个字段，需要 padding
@@ -30,7 +31,7 @@ func TestParseStringPadding(t *testing.T) {
 			0xFF, 0xFF, 0xFF, 0xFF, // 后续数据
 		}
 
-		result, remained, err := converter.parseString(testData, typeref.StringType{}, ast.Module{}, false)
+		result, remained, err := converter.ParseString(testData, typeref.StringType{}, ast.Module{}, false)
 		require.NoError(t, err)
 		require.Equal(t, "", result) // 空字符串
 		require.Equal(t, []byte{0xFF, 0xFF, 0xFF, 0xFF}, remained)
@@ -57,7 +58,7 @@ func TestParseStringPadding(t *testing.T) {
 			0xFF, 0xFF, 0xFF, // 后续数据
 		}
 
-		result, remained, err := converter.parseString(testData, typeref.StringType{}, ast.Module{}, false)
+		result, remained, err := converter.ParseString(testData, typeref.StringType{}, ast.Module{}, false)
 		require.NoError(t, err)
 		require.Equal(t, "H", result)
 		require.Equal(t, []byte{0x00, 0xFF, 0xFF, 0xFF}, remained)
@@ -80,7 +81,7 @@ func TestParseStringPadding(t *testing.T) {
 			0xEF, 0xBB, 0xBF, 0x00, // UTF-8 BOM + 终止符 (4字节)
 		}
 
-		result, remained, err := converter.parseString(testData, typeref.StringType{}, ast.Module{}, true)
+		result, remained, err := converter.ParseString(testData, typeref.StringType{}, ast.Module{}, true)
 		require.NoError(t, err)
 		require.Equal(t, "", result) // 空字符串
 		require.Empty(t, remained)
@@ -106,7 +107,7 @@ func TestParseStringPadding(t *testing.T) {
 			0xFF, 0xFF, // 后续数据
 		}
 
-		result, remained, err := converter.parseString(testData, typeref.StringType{}, ast.Module{}, false)
+		result, remained, err := converter.ParseString(testData, typeref.StringType{}, ast.Module{}, false)
 		require.NoError(t, err)
 		require.Equal(t, "Hi", result)
 		require.Equal(t, []byte{0x00, 0x00, 0xFF, 0xFF}, remained)
@@ -132,7 +133,7 @@ func TestParseStringPadding(t *testing.T) {
 			0xFF, 0xFF, // 后续数据
 		}
 
-		result, remained, err := converter.parseString(testData, typeref.StringType{}, ast.Module{}, false)
+		result, remained, err := converter.ParseString(testData, typeref.StringType{}, ast.Module{}, false)
 		require.NoError(t, err)
 		require.Equal(t, "H", result)
 		require.Equal(t, []byte{0xFF, 0xFF}, remained)
@@ -160,7 +161,7 @@ func TestParseStringPadding(t *testing.T) {
 			0xFF, 0xFF, 0xFF, // 后续数据
 		}
 
-		result, remained, err := converter.parseString(testData, typeref.StringType{}, ast.Module{}, false)
+		result, remained, err := converter.ParseString(testData, typeref.StringType{}, ast.Module{}, false)
 		require.NoError(t, err)
 		require.Equal(t, "Hi", result)
 		require.Empty(t, remained)
@@ -187,7 +188,7 @@ func TestParseStringPadding(t *testing.T) {
 			0xFF, // 只有1字节剩余数据，但需要3字节padding
 		}
 
-		_, _, err := converter.parseString(testData, typeref.StringType{}, ast.Module{}, false)
+		_, _, err := converter.ParseString(testData, typeref.StringType{}, ast.Module{}, false)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "padding length exceeds remained length")
 	})
@@ -215,7 +216,7 @@ func TestParseStringPadding(t *testing.T) {
 			0xFF, 0xFF, 0xFF, // 后续数据
 		}
 
-		result, remained, err := converter.parseString(testData, stringType, ast.Module{}, false)
+		result, remained, err := converter.ParseString(testData, stringType, ast.Module{}, false)
 		require.NoError(t, err)
 		require.Equal(t, "", result) // 空字符串
 		require.Equal(t, []byte{0xFF, 0xFF, 0xFF}, remained)
@@ -243,7 +244,7 @@ func TestParseStringPadding(t *testing.T) {
 			0xFF, 0xFF, 0xFF, // 后续数据
 		}
 
-		result, remained, err := converter.parseString(testData, typeref.StringType{}, ast.Module{}, false)
+		result, remained, err := converter.ParseString(testData, typeref.StringType{}, ast.Module{}, false)
 		require.NoError(t, err)
 		require.Equal(t, "Hi", result)
 		require.Empty(t, remained)

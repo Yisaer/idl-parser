@@ -231,11 +231,11 @@ func (c *IDLConverter) Decode(schemaID string, data []byte) (map[string]interfac
 		return nil, err
 	}
 	c.TotalBytes = len(data)
-	v, _, err := c.parseBytesToStruct(data, *targetSts, *targetModule, true)
+	v, _, err := c.ParseBytesToStruct(data, *targetSts, *targetModule, true)
 	return v, err
 }
 
-func (c *IDLConverter) parseDataByType(data []byte, t typeref.TypeRef, module ast.Module, isLastField bool) (interface{}, []byte, error) {
+func (c *IDLConverter) ParseDataByType(data []byte, t typeref.TypeRef, module ast.Module, isLastField bool) (interface{}, []byte, error) {
 
 	var result interface{}
 	var remained []byte
@@ -247,89 +247,89 @@ func (c *IDLConverter) parseDataByType(data []byte, t typeref.TypeRef, module as
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not array type", t.TypeRefType())
 		}
-		result, remained, err = c.parseArray(data, arrayType, module, isLastField)
+		result, remained, err = c.ParseArray(data, arrayType, module, isLastField)
 	case typ.OctetType:
 		ot, ok := t.(typeref.OctetType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not octet type", t.TypeRefType())
 		}
-		otResult, newRemained, newErr := c.parseOctet(data, ot, module)
+		otResult, newRemained, newErr := c.ParseOctet(data, ot, module)
 		result, remained, err = otResult, newRemained, newErr
 	case typ.ShortType:
 		short, ok := t.(typeref.ShortType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not short type", t.TypeRefType())
 		}
-		shortResult, newRemained, newErr := c.parseShort(data, short, module)
+		shortResult, newRemained, newErr := c.ParseShort(data, short, module)
 		result, remained, err = shortResult, newRemained, newErr
 	case typ.UnsignedShortType:
 		unsignedShort, ok := t.(typeref.UnsignedShortType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not unsigned short type", t.TypeRefType())
 		}
-		ushortResult, newRemained, newErr := c.parseUnsignedShort(data, unsignedShort, module)
+		ushortResult, newRemained, newErr := c.ParseUnsignedShort(data, unsignedShort, module)
 		result, remained, err = ushortResult, newRemained, newErr
 	case typ.LongType:
 		long, ok := t.(typeref.LongType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not long type", t.TypeRefType())
 		}
-		longResult, newRemained, newErr := c.parseLong(data, long, module)
+		longResult, newRemained, newErr := c.ParseLong(data, long, module)
 		result, remained, err = longResult, newRemained, newErr
 	case typ.UnsignedLongType:
 		unsignedLong, ok := t.(typeref.UnsignedLongType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not unsigned long type", t.TypeRefType())
 		}
-		ulongResult, newRemained, newErr := c.parseUnsignedLong(data, unsignedLong, module)
+		ulongResult, newRemained, newErr := c.ParseUnsignedLong(data, unsignedLong, module)
 		result, remained, err = ulongResult, newRemained, newErr
 	case typ.LongLongType:
 		longLong, ok := t.(typeref.LongLongType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not long long type", t.TypeRefType())
 		}
-		llongResult, newRemained, newErr := c.parseLongLong(data, longLong, module)
+		llongResult, newRemained, newErr := c.ParseLongLong(data, longLong, module)
 		result, remained, err = llongResult, newRemained, newErr
 	case typ.UnsignedLongLongType:
 		unsignedLongLong, ok := t.(typeref.UnsignedLongLongType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not unsigned long long type", t.TypeRefType())
 		}
-		ullongResult, newRemained, newErr := c.parseUnsignedLongLong(data, unsignedLongLong, module)
+		ullongResult, newRemained, newErr := c.ParseUnsignedLongLong(data, unsignedLongLong, module)
 		result, remained, err = ullongResult, newRemained, newErr
 	case typ.BooleanType:
 		boolean, ok := t.(typeref.BooleanType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not boolean type", t.TypeRefType())
 		}
-		boolResult, newRemained, newErr := c.parseBoolean(data, boolean, module)
+		boolResult, newRemained, newErr := c.ParseBoolean(data, boolean, module)
 		result, remained, err = boolResult, newRemained, newErr
 	case typ.FloatType:
 		float, ok := t.(typeref.FloatType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not float type", t.TypeRefType())
 		}
-		floatResult, newRemained, newErr := c.parseFloat(data, float, module)
+		floatResult, newRemained, newErr := c.ParseFloat(data, float, module)
 		result, remained, err = floatResult, newRemained, newErr
 	case typ.DoubleType:
 		double, ok := t.(typeref.DoubleType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not double type", t.TypeRefType())
 		}
-		doubleResult, newRemained, newErr := c.parseDouble(data, double, module)
+		doubleResult, newRemained, newErr := c.ParseDouble(data, double, module)
 		result, remained, err = doubleResult, newRemained, newErr
 	case typ.SequenceType:
 		seq := t.(typeref.Sequence)
-		result, remained, err = c.parseBytesToList(data, seq, module, isLastField)
+		result, remained, err = c.ParseBytesToList(data, seq, module, isLastField)
 	case typ.StringType:
 		st, ok := t.(typeref.StringType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not string type", t.TypeRefType())
 		}
-		result, remained, err = c.parseString(data, st, module, isLastField)
+		result, remained, err = c.ParseString(data, st, module, isLastField)
 	case typ.SelfDefinedTypeType:
 		definedType := t.(typeref.TypeName)
-		result, remained, err = c.parseSelfDefineType(data, definedType, module, isLastField)
+		result, remained, err = c.ParseSelfDefineType(data, definedType, module, isLastField)
 	default:
 		return nil, nil, fmt.Errorf("unsupported type:%v", t.TypeName())
 	}
@@ -339,72 +339,72 @@ func (c *IDLConverter) parseDataByType(data []byte, t typeref.TypeRef, module as
 	return result, remained, nil
 }
 
-func (c *IDLConverter) parseArray(data []byte, arrayType typeref.ArrayType, module ast.Module, isParLast bool) ([]interface{}, []byte, error) {
+func (c *IDLConverter) ParseArray(data []byte, arrayType typeref.ArrayType, module ast.Module, isParLast bool) ([]interface{}, []byte, error) {
 	remained := data
 	var err error
 	var v interface{}
 	result := make([]interface{}, 0, arrayType.ArraySize)
 	for i := 0; i < arrayType.ArraySize; i++ {
-		v, remained, err = c.parseDataByType(remained, arrayType.InnerType, module, isParLast && i == arrayType.ArraySize-1)
+		v, remained, err = c.ParseDataByType(remained, arrayType.InnerType, module, isParLast && i == arrayType.ArraySize-1)
 		if err != nil {
-			return nil, nil, fmt.Errorf("parse array element %v error:%v", i, err.Error())
+			return nil, nil, fmt.Errorf("Parse array element %v error:%v", i, err.Error())
 		}
 		result = append(result, v)
 	}
 	return result, remained, nil
 }
 
-func (c *IDLConverter) parseOctet(data []byte, ot typeref.OctetType, _ ast.Module) (uint8, []byte, error) {
-	result, remained, err := c.parseBytesToUint8(data)
+func (c *IDLConverter) ParseOctet(data []byte, ot typeref.OctetType, _ ast.Module) (uint8, []byte, error) {
+	result, remained, err := c.ParseBytesToUint8(data)
 	return uint8(result), remained, err
 }
 
-func (c *IDLConverter) parseShort(data []byte, short typeref.ShortType, _ ast.Module) (int16, []byte, error) {
-	result, remained, err := c.parseBytesToInt16(data)
+func (c *IDLConverter) ParseShort(data []byte, short typeref.ShortType, _ ast.Module) (int16, []byte, error) {
+	result, remained, err := c.ParseBytesToInt16(data)
 	return int16(result), remained, err
 }
 
-func (c *IDLConverter) parseUnsignedShort(data []byte, unsignedShort typeref.UnsignedShortType, _ ast.Module) (uint16, []byte, error) {
-	result, remained, err := c.parseBytesToUint16(data)
+func (c *IDLConverter) ParseUnsignedShort(data []byte, unsignedShort typeref.UnsignedShortType, _ ast.Module) (uint16, []byte, error) {
+	result, remained, err := c.ParseBytesToUint16(data)
 	return uint16(result), remained, err
 }
 
-func (c *IDLConverter) parseLong(data []byte, long typeref.LongType, _ ast.Module) (int32, []byte, error) {
-	result, remained, err := c.parseBytesToInt32(data)
+func (c *IDLConverter) ParseLong(data []byte, long typeref.LongType, _ ast.Module) (int32, []byte, error) {
+	result, remained, err := c.ParseBytesToInt32(data)
 	return int32(result), remained, err
 }
 
-func (c *IDLConverter) parseUnsignedLong(data []byte, unsignedLong typeref.UnsignedLongType, _ ast.Module) (uint32, []byte, error) {
-	result, remained, err := c.parseBytesToUint32(data)
+func (c *IDLConverter) ParseUnsignedLong(data []byte, unsignedLong typeref.UnsignedLongType, _ ast.Module) (uint32, []byte, error) {
+	result, remained, err := c.ParseBytesToUint32(data)
 	return uint32(result), remained, err
 }
 
-func (c *IDLConverter) parseLongLong(data []byte, longLong typeref.LongLongType, _ ast.Module) (int64, []byte, error) {
-	result, remained, err := c.parseBytesToInt64(data)
+func (c *IDLConverter) ParseLongLong(data []byte, longLong typeref.LongLongType, _ ast.Module) (int64, []byte, error) {
+	result, remained, err := c.ParseBytesToInt64(data)
 	return result, remained, err
 }
 
-func (c *IDLConverter) parseUnsignedLongLong(data []byte, unsignedLongLong typeref.UnsignedLongLongType, _ ast.Module) (uint64, []byte, error) {
-	result, remained, err := c.parseBytesToUint64(data)
+func (c *IDLConverter) ParseUnsignedLongLong(data []byte, unsignedLongLong typeref.UnsignedLongLongType, _ ast.Module) (uint64, []byte, error) {
+	result, remained, err := c.ParseBytesToUint64(data)
 	return uint64(result), remained, err
 }
 
-func (c *IDLConverter) parseBoolean(data []byte, boolean typeref.BooleanType, _ ast.Module) (bool, []byte, error) {
-	result, remained, err := c.parseBytesToBoolean(data)
+func (c *IDLConverter) ParseBoolean(data []byte, boolean typeref.BooleanType, _ ast.Module) (bool, []byte, error) {
+	result, remained, err := c.ParseBytesToBoolean(data)
 	return result, remained, err
 }
 
-func (c *IDLConverter) parseFloat(data []byte, float typeref.FloatType, _ ast.Module) (float32, []byte, error) {
-	result, remained, err := c.parseBytesToFloat32(data)
+func (c *IDLConverter) ParseFloat(data []byte, float typeref.FloatType, _ ast.Module) (float32, []byte, error) {
+	result, remained, err := c.ParseBytesToFloat32(data)
 	return result, remained, err
 }
 
-func (c *IDLConverter) parseDouble(data []byte, float typeref.DoubleType, _ ast.Module) (float64, []byte, error) {
-	result, remained, err := c.parseBytesToFloat64(data)
+func (c *IDLConverter) ParseDouble(data []byte, float typeref.DoubleType, _ ast.Module) (float64, []byte, error) {
+	result, remained, err := c.ParseBytesToFloat64(data)
 	return result, remained, err
 }
 
-func (c *IDLConverter) parseString(data []byte, st typeref.StringType, _ ast.Module, isLast bool) (interface{}, []byte, error) {
+func (c *IDLConverter) ParseString(data []byte, st typeref.StringType, _ ast.Module, isLast bool) (interface{}, []byte, error) {
 	var result interface{}
 	var remained []byte
 	var err error
@@ -424,11 +424,11 @@ func (c *IDLConverter) parseString(data []byte, st typeref.StringType, _ ast.Mod
 	return result, remained, nil
 }
 
-func (c *IDLConverter) parseSelfDefineType(data []byte, definedType typeref.TypeName, module ast.Module, isParLast bool) (interface{}, []byte, error) {
+func (c *IDLConverter) ParseSelfDefineType(data []byte, definedType typeref.TypeName, module ast.Module, isParLast bool) (interface{}, []byte, error) {
 	for _, content := range module.Content {
 		if content.GetName() == definedType.Name && content.ModuleContentType() == typ.StructType {
 			st := content.(struct_type.Struct)
-			return c.parseBytesToStruct(data, st, module, isParLast)
+			return c.ParseBytesToStruct(data, st, module, isParLast)
 		}
 	}
 	return nil, nil, fmt.Errorf("unsupported type:%v", definedType.Name)

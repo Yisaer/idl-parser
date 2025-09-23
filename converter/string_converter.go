@@ -183,7 +183,7 @@ func parseDynamicStringContent(data []byte) (string, error) {
 // ParseBytesToDynamicString 使用可配置的长度字段解析动态字符串
 func (c *IDLConverter) ParseBytesToDynamicString(data []byte) (value string, remained []byte, err error) {
 	// 1. 使用可配置的长度字段解析长度
-	lengthField, remainedAfterLength, err := c.parseBytesToLength(data)
+	lengthField, remainedAfterLength, err := c.ParseBytesToLength(data)
 	if err != nil {
 		return "", nil, err
 	}
