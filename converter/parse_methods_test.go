@@ -25,7 +25,7 @@ func TestParseOctet(t *testing.T) {
 	testData := []byte{0x42, 0x11, 0x22}
 
 	ot := typeref.OctetType{}
-	result, remained, err := converter.parseOctet(testData, ot, ast.Module{})
+	result, remained, err := converter.ParseOctet(testData, ot, ast.Module{})
 
 	if err != nil {
 		t.Errorf("parseOctet failed: %v", err)
@@ -56,7 +56,7 @@ func TestParseShort(t *testing.T) {
 	testData := []byte{0x12, 0x34, 0x55, 0x66}
 
 	short := typeref.ShortType{}
-	result, remained, err := converter.parseShort(testData, short, ast.Module{})
+	result, remained, err := converter.ParseShort(testData, short, ast.Module{})
 
 	if err != nil {
 		t.Errorf("parseShort failed: %v", err)
@@ -87,7 +87,7 @@ func TestParseShortLittleEndian(t *testing.T) {
 	testData := []byte{0x34, 0x12, 0x55, 0x66}
 
 	short := typeref.ShortType{}
-	result, remained, err := converter.parseShort(testData, short, ast.Module{})
+	result, remained, err := converter.ParseShort(testData, short, ast.Module{})
 
 	if err != nil {
 		t.Errorf("parseShort failed: %v", err)
@@ -118,7 +118,7 @@ func TestParseUnsignedShort(t *testing.T) {
 	testData := []byte{0xFF, 0xFF, 0x55, 0x66}
 
 	unsignedShort := typeref.UnsignedShortType{}
-	result, remained, err := converter.parseUnsignedShort(testData, unsignedShort, ast.Module{})
+	result, remained, err := converter.ParseUnsignedShort(testData, unsignedShort, ast.Module{})
 
 	if err != nil {
 		t.Errorf("parseUnsignedShort failed: %v", err)
@@ -149,7 +149,7 @@ func TestParseLong(t *testing.T) {
 	testData := []byte{0x12, 0x34, 0x56, 0x78, 0x99, 0xAA}
 
 	long := typeref.LongType{}
-	result, remained, err := converter.parseLong(testData, long, ast.Module{})
+	result, remained, err := converter.ParseLong(testData, long, ast.Module{})
 
 	if err != nil {
 		t.Errorf("parseLong failed: %v", err)
@@ -180,7 +180,7 @@ func TestParseUnsignedLong(t *testing.T) {
 	testData := []byte{0xFF, 0xFF, 0xFF, 0xFF, 0x99, 0xAA}
 
 	unsignedLong := typeref.UnsignedLongType{}
-	result, remained, err := converter.parseUnsignedLong(testData, unsignedLong, ast.Module{})
+	result, remained, err := converter.ParseUnsignedLong(testData, unsignedLong, ast.Module{})
 
 	if err != nil {
 		t.Errorf("parseUnsignedLong failed: %v", err)
@@ -211,7 +211,7 @@ func TestParseLongLong(t *testing.T) {
 	testData := []byte{0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x99, 0xAA}
 
 	longLong := typeref.LongLongType{}
-	result, remained, err := converter.parseLongLong(testData, longLong, ast.Module{})
+	result, remained, err := converter.ParseLongLong(testData, longLong, ast.Module{})
 
 	if err != nil {
 		t.Errorf("parseLongLong failed: %v", err)
@@ -243,7 +243,7 @@ func TestParseUnsignedLongLong(t *testing.T) {
 	testData := []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x99, 0xAA}
 
 	unsignedLongLong := typeref.UnsignedLongLongType{}
-	result, remained, err := converter.parseUnsignedLongLong(testData, unsignedLongLong, ast.Module{})
+	result, remained, err := converter.ParseUnsignedLongLong(testData, unsignedLongLong, ast.Module{})
 
 	if err != nil {
 		t.Errorf("parseUnsignedLongLong failed: %v", err)
@@ -275,7 +275,7 @@ func TestParseBoolean(t *testing.T) {
 	testData := []byte{0x01, 0x99, 0xAA}
 
 	boolean := typeref.BooleanType{}
-	result, remained, err := converter.parseBoolean(testData, boolean, ast.Module{})
+	result, remained, err := converter.ParseBoolean(testData, boolean, ast.Module{})
 
 	if err != nil {
 		t.Errorf("parseBoolean failed: %v", err)
@@ -307,7 +307,7 @@ func TestParseFloat(t *testing.T) {
 	testData := []byte{0x40, 0x48, 0xF5, 0xC3, 0x99, 0xAA}
 
 	float := typeref.FloatType{}
-	result, remained, err := converter.parseFloat(testData, float, ast.Module{})
+	result, remained, err := converter.ParseFloat(testData, float, ast.Module{})
 
 	if err != nil {
 		t.Errorf("parseFloat failed: %v", err)
@@ -340,7 +340,7 @@ func TestParseDouble(t *testing.T) {
 	testData := []byte{0x40, 0x09, 0x21, 0xFB, 0x54, 0x44, 0x2D, 0x18, 0x99, 0xAA}
 
 	double := typeref.DoubleType{}
-	result, remained, err := converter.parseDouble(testData, double, ast.Module{})
+	result, remained, err := converter.ParseDouble(testData, double, ast.Module{})
 
 	if err != nil {
 		t.Errorf("parseDouble failed: %v", err)
@@ -376,7 +376,7 @@ func TestParseString(t *testing.T) {
 	testData := []byte{0x00, 0x00, 0x00, 0x09, 0xEF, 0xBB, 0xBF, 'h', 'e', 'l', 'l', 'o', 0x00, 0x99, 0xAA}
 
 	stringType := typeref.StringType{}
-	result, remained, err := converter.parseString(testData, stringType, ast.Module{}, false)
+	result, remained, err := converter.ParseString(testData, stringType, ast.Module{}, false)
 
 	if err != nil {
 		t.Errorf("parseString failed: %v", err)
@@ -412,7 +412,7 @@ func TestParseArray(t *testing.T) {
 		ArraySize: 3,
 		InnerType: typeref.ShortType{},
 	}
-	result, remained, err := converter.parseArray(testData, arrayType, ast.Module{}, false)
+	result, remained, err := converter.ParseArray(testData, arrayType, ast.Module{}, false)
 
 	if err != nil {
 		t.Errorf("parseArray failed: %v", err)
@@ -446,7 +446,7 @@ func TestParseBytesToList(t *testing.T) {
 	seqType := typeref.Sequence{
 		InnerType: typeref.ShortType{},
 	}
-	result, remained, err := converter.parseBytesToList(testData, seqType, ast.Module{}, true)
+	result, remained, err := converter.ParseBytesToList(testData, seqType, ast.Module{}, true)
 
 	if err != nil {
 		t.Errorf("parseBytesToList failed: %v", err)

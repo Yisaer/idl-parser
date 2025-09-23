@@ -10,14 +10,14 @@ import (
 	"github.com/yisaer/idl-parser/ast/typeref"
 )
 
-func (c *IDLConverter) parseBytesToStruct(data []byte, st struct_type.Struct, module ast.Module, isParLast bool) (map[string]interface{}, []byte, error) {
+func (c *IDLConverter) ParseBytesToStruct(data []byte, st struct_type.Struct, module ast.Module, isParLast bool) (map[string]interface{}, []byte, error) {
 	var v interface{}
 	var err error
 	var remained []byte
 	remained = data
 	m := make(map[string]any, len(st.Fields))
 	for index, field := range st.Fields {
-		v, remained, err = c.parseDataByType(remained, field.Type, module, isParLast && index == len(st.Fields)-1)
+		v, remained, err = c.ParseDataByType(remained, field.Type, module, isParLast && index == len(st.Fields)-1)
 		if err != nil {
 			return nil, nil, fmt.Errorf("struct %v parse field %v error:%v", st, field.Name, err.Error())
 		}
@@ -26,21 +26,7 @@ func (c *IDLConverter) parseBytesToStruct(data []byte, st struct_type.Struct, mo
 	return m, remained, nil
 }
 
-func (c *IDLConverter) parseBytesToInt64(data []byte) (int64, []byte, error) {
-	if len(data) < 8 {
-		return 0, nil, fmt.Errorf("expect data len %v got len %v", 8, len(data))
-	}
-	parseData, remainData := data[:8], data[8:]
-	var value int64
-	if c.IsLittleEndian {
-		value = int64(binary.LittleEndian.Uint64(parseData))
-	} else {
-		value = int64(binary.BigEndian.Uint64(parseData))
-	}
-	return value, remainData, nil
-}
-
-func (c *IDLConverter) parseBytesToInt8(data []byte) (int8, []byte, error) {
+func (c *IDLConverter) ParseBytesToInt8(data []byte) (int8, []byte, error) {
 	if len(data) < 1 {
 		return 0, nil, fmt.Errorf("expect data len %v got len %v", 1, len(data))
 	}
@@ -50,7 +36,7 @@ func (c *IDLConverter) parseBytesToInt8(data []byte) (int8, []byte, error) {
 	return value, remainData, nil
 }
 
-func (c *IDLConverter) parseBytesToInt16(data []byte) (int64, []byte, error) {
+func (c *IDLConverter) ParseBytesToInt16(data []byte) (int64, []byte, error) {
 	if len(data) < 2 {
 		return 0, nil, fmt.Errorf("expect data len %v got len %v", 2, len(data))
 	}
@@ -64,31 +50,7 @@ func (c *IDLConverter) parseBytesToInt16(data []byte) (int64, []byte, error) {
 	return int64(value), remainData, nil
 }
 
-func (c *IDLConverter) parseBytesToUint8(data []byte) (int64, []byte, error) {
-	if len(data) < 1 {
-		return 0, nil, fmt.Errorf("expect data len %v got len %v", 1, len(data))
-	}
-	parseData, remainData := data[:1], data[1:]
-	var value uint8
-	value = parseData[0]
-	return int64(value), remainData, nil
-}
-
-func (c *IDLConverter) parseBytesToUint16(data []byte) (int64, []byte, error) {
-	if len(data) < 2 {
-		return 0, nil, fmt.Errorf("expect data len %v got len %v", 2, len(data))
-	}
-	parseData, remainData := data[:2], data[2:]
-	var value uint16
-	if c.IsLittleEndian {
-		value = binary.LittleEndian.Uint16(parseData)
-	} else {
-		value = binary.BigEndian.Uint16(parseData)
-	}
-	return int64(value), remainData, nil
-}
-
-func (c *IDLConverter) parseBytesToInt32(data []byte) (int64, []byte, error) {
+func (c *IDLConverter) ParseBytesToInt32(data []byte) (int64, []byte, error) {
 	if len(data) < 4 {
 		return 0, nil, fmt.Errorf("expect data len %v got len %v", 4, len(data))
 	}
@@ -102,7 +64,45 @@ func (c *IDLConverter) parseBytesToInt32(data []byte) (int64, []byte, error) {
 	return int64(value), remainData, nil
 }
 
-func (c *IDLConverter) parseBytesToUint32(data []byte) (int64, []byte, error) {
+func (c *IDLConverter) ParseBytesToInt64(data []byte) (int64, []byte, error) {
+	if len(data) < 8 {
+		return 0, nil, fmt.Errorf("expect data len %v got len %v", 8, len(data))
+	}
+	parseData, remainData := data[:8], data[8:]
+	var value int64
+	if c.IsLittleEndian {
+		value = int64(binary.LittleEndian.Uint64(parseData))
+	} else {
+		value = int64(binary.BigEndian.Uint64(parseData))
+	}
+	return value, remainData, nil
+}
+
+func (c *IDLConverter) ParseBytesToUint8(data []byte) (int64, []byte, error) {
+	if len(data) < 1 {
+		return 0, nil, fmt.Errorf("expect data len %v got len %v", 1, len(data))
+	}
+	parseData, remainData := data[:1], data[1:]
+	var value uint8
+	value = parseData[0]
+	return int64(value), remainData, nil
+}
+
+func (c *IDLConverter) ParseBytesToUint16(data []byte) (int64, []byte, error) {
+	if len(data) < 2 {
+		return 0, nil, fmt.Errorf("expect data len %v got len %v", 2, len(data))
+	}
+	parseData, remainData := data[:2], data[2:]
+	var value uint16
+	if c.IsLittleEndian {
+		value = binary.LittleEndian.Uint16(parseData)
+	} else {
+		value = binary.BigEndian.Uint16(parseData)
+	}
+	return int64(value), remainData, nil
+}
+
+func (c *IDLConverter) ParseBytesToUint32(data []byte) (int64, []byte, error) {
 	if len(data) < 4 {
 		return 0, nil, fmt.Errorf("expect data len %v got len %v", 4, len(data))
 	}
@@ -116,7 +116,7 @@ func (c *IDLConverter) parseBytesToUint32(data []byte) (int64, []byte, error) {
 	return int64(value), remainData, nil
 }
 
-func (c *IDLConverter) parseBytesToUint64(data []byte) (int64, []byte, error) {
+func (c *IDLConverter) ParseBytesToUint64(data []byte) (int64, []byte, error) {
 	if len(data) < 8 {
 		return 0, nil, fmt.Errorf("expect data len %v got len %v", 8, len(data))
 	}
@@ -130,14 +130,14 @@ func (c *IDLConverter) parseBytesToUint64(data []byte) (int64, []byte, error) {
 	return int64(value), remainData, nil
 }
 
-func (c *IDLConverter) parseBytesToBoolean(data []byte) (bool, []byte, error) {
+func (c *IDLConverter) ParseBytesToBoolean(data []byte) (bool, []byte, error) {
 	if len(data) < 1 {
 		return false, nil, fmt.Errorf("expect data len %v got len %v", 1, len(data))
 	}
 	return data[0] != 0x00, data[1:], nil
 }
 
-func (c *IDLConverter) parseBytesToFloat32(data []byte) (float32, []byte, error) {
+func (c *IDLConverter) ParseBytesToFloat32(data []byte) (float32, []byte, error) {
 	if len(data) < 4 {
 		return 0, nil, fmt.Errorf("expect data len %v got len %v", 4, len(data))
 	}
@@ -151,7 +151,7 @@ func (c *IDLConverter) parseBytesToFloat32(data []byte) (float32, []byte, error)
 	return value, remainData, nil
 }
 
-func (c *IDLConverter) parseBytesToFloat64(data []byte) (float64, []byte, error) {
+func (c *IDLConverter) ParseBytesToFloat64(data []byte) (float64, []byte, error) {
 	if len(data) < 8 {
 		return 0, nil, fmt.Errorf("expect data len %v got len %v", 8, len(data))
 	}
@@ -165,15 +165,15 @@ func (c *IDLConverter) parseBytesToFloat64(data []byte) (float64, []byte, error)
 	return value, remainData, nil
 }
 
-func (c *IDLConverter) parseBytesToList(data []byte, seqType typeref.Sequence, module ast.Module, isLast bool) ([]interface{}, []byte, error) {
-	sequenceLen, remained, err := c.parseBytesToLength(data)
+func (c *IDLConverter) ParseBytesToList(data []byte, seqType typeref.Sequence, module ast.Module, isLast bool) ([]interface{}, []byte, error) {
+	sequenceLen, remained, err := c.ParseBytesToLength(data)
 	if err != nil {
 		return nil, nil, err
 	}
 	result := make([]interface{}, 0, sequenceLen)
 	var v interface{}
 	for i := 0; i < int(sequenceLen); i++ {
-		v, remained, err = c.parseDataByType(remained, seqType.InnerType, module, isLast && i == sequenceLen-1)
+		v, remained, err = c.ParseDataByType(remained, seqType.InnerType, module, isLast && i == sequenceLen-1)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parse sequence %v error:%v", seqType.InnerType, err.Error())
 		}
@@ -186,22 +186,22 @@ func (c *IDLConverter) parseBytesToList(data []byte, seqType typeref.Sequence, m
 	return result, remained, nil
 }
 
-func (c *IDLConverter) parseBytesToLength(data []byte) (int, []byte, error) {
+func (c *IDLConverter) ParseBytesToLength(data []byte) (int, []byte, error) {
 	switch c.LengthFieldLength {
 	case 1:
-		v, remained, err := c.parseBytesToUint8(data)
+		v, remained, err := c.ParseBytesToUint8(data)
 		if err != nil {
 			return 0, nil, err
 		}
 		return int(v), remained, nil
 	case 2:
-		v, remained, err := c.parseBytesToUint16(data)
+		v, remained, err := c.ParseBytesToUint16(data)
 		if err != nil {
 			return 0, nil, err
 		}
 		return int(v), remained, nil
 	case 4:
-		v, remained, err := c.parseBytesToUint32(data)
+		v, remained, err := c.ParseBytesToUint32(data)
 		if err != nil {
 			return 0, nil, err
 		}
