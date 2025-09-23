@@ -10,14 +10,14 @@ import (
 	"github.com/yisaer/idl-parser/ast/typeref"
 )
 
-func (c *IDLConverter) parseBytesToStruct(data []byte, st struct_type.Struct, module ast.Module) (map[string]interface{}, []byte, error) {
+func (c *IDLConverter) parseBytesToStruct(data []byte, st struct_type.Struct, module ast.Module, isParLast bool) (map[string]interface{}, []byte, error) {
 	var v interface{}
 	var err error
 	var remained []byte
 	remained = data
 	m := make(map[string]any, len(st.Fields))
-	for _, field := range st.Fields {
-		v, remained, err = c.parseDataByType(remained, field.Type, module)
+	for index, field := range st.Fields {
+		v, remained, err = c.parseDataByType(remained, field.Type, module, isParLast && index == len(st.Fields)-1)
 		if err != nil {
 			return nil, nil, fmt.Errorf("struct %v parse field %v error:%v", st, field.Name, err.Error())
 		}
@@ -165,7 +165,7 @@ func (c *IDLConverter) parseBytesToFloat64(data []byte) (float64, []byte, error)
 	return value, remainData, nil
 }
 
-func (c *IDLConverter) parseBytesToList(data []byte, seqType typeref.Sequence, module ast.Module) ([]interface{}, []byte, error) {
+func (c *IDLConverter) parseBytesToList(data []byte, seqType typeref.Sequence, module ast.Module, isLast bool) ([]interface{}, []byte, error) {
 	sequenceLen, remained, err := c.parseBytesToLength(data)
 	if err != nil {
 		return nil, nil, err
@@ -173,11 +173,15 @@ func (c *IDLConverter) parseBytesToList(data []byte, seqType typeref.Sequence, m
 	result := make([]interface{}, 0, sequenceLen)
 	var v interface{}
 	for i := 0; i < int(sequenceLen); i++ {
-		v, remained, err = c.parseDataByType(remained, seqType.InnerType, module)
+		v, remained, err = c.parseDataByType(remained, seqType.InnerType, module, isLast && i == sequenceLen-1)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parse sequence %v error:%v", seqType.InnerType, err.Error())
 		}
 		result = append(result, v)
+	}
+	remained, err = c.consumePadding(remained, isLast)
+	if err != nil {
+		return nil, nil, err
 	}
 	return result, remained, nil
 }

@@ -1,0 +1,18 @@
+module m {
+    struct s {
+        string A;
+        string B;
+    }
+    
+    struct inner {
+        string field1;
+        string field2;
+    }
+    
+    struct outer {
+        string fieldA;
+        inner innerStruct;
+        string fieldB;
+    }
+}
+
