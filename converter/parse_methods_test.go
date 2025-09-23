@@ -24,8 +24,7 @@ func TestParseOctet(t *testing.T) {
 	// 测试数据：octet(1字节) + 剩余数据(2字节)
 	testData := []byte{0x42, 0x11, 0x22}
 
-	ot := typeref.OctetType{}
-	result, remained, err := converter.ParseOctet(testData, ot, ast.Module{})
+	result, remained, err := converter.ParseOctet(testData)
 
 	if err != nil {
 		t.Errorf("parseOctet failed: %v", err)
@@ -55,8 +54,7 @@ func TestParseShort(t *testing.T) {
 	// 测试数据：short(2字节) + 剩余数据(2字节)
 	testData := []byte{0x12, 0x34, 0x55, 0x66}
 
-	short := typeref.ShortType{}
-	result, remained, err := converter.ParseShort(testData, short, ast.Module{})
+	result, remained, err := converter.ParseShort(testData)
 
 	if err != nil {
 		t.Errorf("parseShort failed: %v", err)
@@ -86,8 +84,7 @@ func TestParseShortLittleEndian(t *testing.T) {
 	// 测试数据：short(2字节) + 剩余数据(2字节)
 	testData := []byte{0x34, 0x12, 0x55, 0x66}
 
-	short := typeref.ShortType{}
-	result, remained, err := converter.ParseShort(testData, short, ast.Module{})
+	result, remained, err := converter.ParseShort(testData)
 
 	if err != nil {
 		t.Errorf("parseShort failed: %v", err)
@@ -117,8 +114,7 @@ func TestParseUnsignedShort(t *testing.T) {
 	// 测试数据：unsigned short(2字节) + 剩余数据(2字节)
 	testData := []byte{0xFF, 0xFF, 0x55, 0x66}
 
-	unsignedShort := typeref.UnsignedShortType{}
-	result, remained, err := converter.ParseUnsignedShort(testData, unsignedShort, ast.Module{})
+	result, remained, err := converter.ParseUnsignedShort(testData)
 
 	if err != nil {
 		t.Errorf("parseUnsignedShort failed: %v", err)
@@ -148,8 +144,7 @@ func TestParseLong(t *testing.T) {
 	// 测试数据：long(4字节) + 剩余数据(2字节)
 	testData := []byte{0x12, 0x34, 0x56, 0x78, 0x99, 0xAA}
 
-	long := typeref.LongType{}
-	result, remained, err := converter.ParseLong(testData, long, ast.Module{})
+	result, remained, err := converter.ParseLong(testData)
 
 	if err != nil {
 		t.Errorf("parseLong failed: %v", err)
@@ -179,8 +174,7 @@ func TestParseUnsignedLong(t *testing.T) {
 	// 测试数据：unsigned long(4字节) + 剩余数据(2字节)
 	testData := []byte{0xFF, 0xFF, 0xFF, 0xFF, 0x99, 0xAA}
 
-	unsignedLong := typeref.UnsignedLongType{}
-	result, remained, err := converter.ParseUnsignedLong(testData, unsignedLong, ast.Module{})
+	result, remained, err := converter.ParseUnsignedLong(testData)
 
 	if err != nil {
 		t.Errorf("parseUnsignedLong failed: %v", err)
@@ -210,8 +204,7 @@ func TestParseLongLong(t *testing.T) {
 	// 测试数据：long long(8字节) + 剩余数据(2字节)
 	testData := []byte{0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x99, 0xAA}
 
-	longLong := typeref.LongLongType{}
-	result, remained, err := converter.ParseLongLong(testData, longLong, ast.Module{})
+	result, remained, err := converter.ParseLongLong(testData)
 
 	if err != nil {
 		t.Errorf("parseLongLong failed: %v", err)
@@ -242,8 +235,7 @@ func TestParseUnsignedLongLong(t *testing.T) {
 	// 测试数据：unsigned long long(8字节) + 剩余数据(2字节)
 	testData := []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x99, 0xAA}
 
-	unsignedLongLong := typeref.UnsignedLongLongType{}
-	result, remained, err := converter.ParseUnsignedLongLong(testData, unsignedLongLong, ast.Module{})
+	result, remained, err := converter.ParseUnsignedLongLong(testData)
 
 	if err != nil {
 		t.Errorf("parseUnsignedLongLong failed: %v", err)
@@ -274,8 +266,7 @@ func TestParseBoolean(t *testing.T) {
 	// 测试数据：boolean(1字节) + 剩余数据(2字节)
 	testData := []byte{0x01, 0x99, 0xAA}
 
-	boolean := typeref.BooleanType{}
-	result, remained, err := converter.ParseBoolean(testData, boolean, ast.Module{})
+	result, remained, err := converter.ParseBoolean(testData)
 
 	if err != nil {
 		t.Errorf("parseBoolean failed: %v", err)
@@ -306,8 +297,7 @@ func TestParseFloat(t *testing.T) {
 	// 使用 3.14 的 IEEE 754 表示 (big endian)
 	testData := []byte{0x40, 0x48, 0xF5, 0xC3, 0x99, 0xAA}
 
-	float := typeref.FloatType{}
-	result, remained, err := converter.ParseFloat(testData, float, ast.Module{})
+	result, remained, err := converter.ParseFloat(testData)
 
 	if err != nil {
 		t.Errorf("parseFloat failed: %v", err)
@@ -339,8 +329,7 @@ func TestParseDouble(t *testing.T) {
 	// 使用 3.141592653589793 的 IEEE 754 表示 (big endian)
 	testData := []byte{0x40, 0x09, 0x21, 0xFB, 0x54, 0x44, 0x2D, 0x18, 0x99, 0xAA}
 
-	double := typeref.DoubleType{}
-	result, remained, err := converter.ParseDouble(testData, double, ast.Module{})
+	result, remained, err := converter.ParseDouble(testData)
 
 	if err != nil {
 		t.Errorf("parseDouble failed: %v", err)
@@ -399,7 +388,6 @@ func TestParseString(t *testing.T) {
 			t.Errorf("Expected remained[%d] = 0x%02x, got 0x%02x", i, b, remained[i])
 		}
 	}
-
 }
 
 func TestParseArray(t *testing.T) {
