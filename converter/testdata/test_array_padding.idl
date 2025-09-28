@@ -1,0 +1,19 @@
+module m {
+    // 测试多个动态数组的结构体
+    struct arrayStruct {
+        sequence<short> arrayA;  // 第一个动态数组，不是最后一个字段，需要 padding
+        sequence<short> arrayB; // 第二个动态数组，是最后一个字段，不需要 padding
+    }
+    
+    // 测试嵌套结构体中的动态数组 padding
+    struct innerArray {
+        sequence<short> field1; // 第一个动态数组，不是最后一个字段，需要 padding
+        sequence<short> field2; // 第二个动态数组，是最后一个字段，不需要 padding
+    }
+    
+    struct outerArray {
+        sequence<short> fieldA;     // 第一个动态数组，不是最后一个字段，需要 padding
+        innerArray innerStruct;     // 嵌套结构体
+        sequence<short> fieldB;     // 最后一个动态数组，不需要 padding
+    }
+}
