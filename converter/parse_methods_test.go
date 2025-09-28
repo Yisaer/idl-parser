@@ -365,7 +365,7 @@ func TestParseString(t *testing.T) {
 	testData := []byte{0x00, 0x00, 0x00, 0x09, 0xEF, 0xBB, 0xBF, 'h', 'e', 'l', 'l', 'o', 0x00, 0x99, 0xAA}
 
 	stringType := typeref.StringType{}
-	result, remained, err := converter.ParseString(testData, stringType, ast.Module{}, false)
+	result, remained, err := converter.ParseString(testData, stringType, ast.Module{})
 
 	if err != nil {
 		t.Errorf("parseString failed: %v", err)
@@ -400,7 +400,7 @@ func TestParseArray(t *testing.T) {
 		ArraySize: 3,
 		InnerType: typeref.ShortType{},
 	}
-	result, remained, err := converter.ParseArray(testData, arrayType, ast.Module{}, false)
+	result, remained, err := converter.ParseArray(testData, arrayType, ast.Module{})
 
 	if err != nil {
 		t.Errorf("parseArray failed: %v", err)
@@ -434,7 +434,7 @@ func TestParseBytesToList(t *testing.T) {
 	seqType := typeref.Sequence{
 		InnerType: typeref.ShortType{},
 	}
-	result, remained, err := converter.ParseBytesToList(testData, seqType, ast.Module{}, true)
+	result, remained, err := converter.ParseBytesToList(testData, seqType, ast.Module{})
 
 	if err != nil {
 		t.Errorf("parseBytesToList failed: %v", err)
