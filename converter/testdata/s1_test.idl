@@ -1,0 +1,12 @@
+module m {
+    struct WiFiApItem {
+        string<64> wiFiApName;
+        long wiFiApStrength;
+        long wiFiApEncryption;
+    }
+
+    struct WifiApList {
+        long wiFiApNum;
+        sequence<WiFiApItem> wiFiApArray;
+    }
+};
