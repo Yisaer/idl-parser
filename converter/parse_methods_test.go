@@ -428,8 +428,8 @@ func TestParseBytesToList(t *testing.T) {
 	converter := createTestConverterForParseTests(false)
 
 	// 测试数据：长度字段(4字节) + 2个short元素(4字节) + 剩余数据(2字节)
-	// 长度字段: 0x00000002 (2)
-	testData := []byte{0x00, 0x00, 0x00, 0x02, 0x12, 0x34, 0x56, 0x78, 0x99, 0xAA}
+	// 长度字段: 0x00000004 (4字节，表示2个short元素的总字节数)
+	testData := []byte{0x00, 0x00, 0x00, 0x04, 0x12, 0x34, 0x56, 0x78, 0x99, 0xAA}
 
 	seqType := typeref.Sequence{
 		InnerType: typeref.ShortType{},

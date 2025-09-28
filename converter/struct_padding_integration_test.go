@@ -119,14 +119,14 @@ func TestStructPaddingIntegration(t *testing.T) {
 		// arrayA: 长度字段(4字节) + 3个short元素(6字节) = 10字节，10 % 4 = 2，需要2字节padding
 		// arrayB: 长度字段(4字节) + 2个short元素(4字节) = 8字节，是最后一个字段，不需要padding
 		testData := []byte{
-			// arrayA: [1, 2, 3] (12字节)
-			0x00, 0x00, 0x00, 0x03, // 长度字段 (3个元素)
+			// arrayA: [1, 2, 3] (10字节)
+			0x00, 0x00, 0x00, 0x06, // 长度字段 (6字节，3个short元素的总字节数)
 			0x00, 0x01, 0x00, 0x02, 0x00, 0x03, // 三个short元素: 1, 2, 3
 			0x00, 0x00, // padding 字节 (2字节)
 
-			// arrayB: [4, 5]
-			0x00, 0x00, 0x00, 0x02, // 长度字段 (2个元素) 4字节
-			0x00, 0x04, 0x00, 0x05, // 两个short元素: 4, 5 4字节
+			// arrayB: [4, 5] (8字节)
+			0x00, 0x00, 0x00, 0x04, // 长度字段 (4字节，2个short元素的总字节数)
+			0x00, 0x04, 0x00, 0x05, // 两个short元素: 4, 5
 		}
 
 		result, err := converter.Decode("m.arrayStruct", testData)
@@ -166,22 +166,22 @@ func TestStructPaddingIntegration(t *testing.T) {
 		// innerStruct.field2: 长度字段(4字节) + 2个short元素(4字节) = 8字节，是最后一个字段，不需要padding
 		// fieldB: 长度字段(4字节) + 2个short元素(4字节) = 8字节，是最后一个字段，不需要padding
 		testData := []byte{
-			// fieldA: [10, 20, 30] (12字节)
-			0x00, 0x00, 0x00, 0x03, // 长度字段 (3个元素)
+			// fieldA: [10, 20, 30] (10字节)
+			0x00, 0x00, 0x00, 0x06, // 长度字段 (6字节，3个short元素的总字节数)
 			0x00, 0x0A, 0x00, 0x14, 0x00, 0x1E, // 三个short元素: 10, 20, 30
 			0x00, 0x00, // padding 字节 (2字节)
 
-			// innerStruct.field1: [40, 50, 60] (12字节)
-			0x00, 0x00, 0x00, 0x03, // 长度字段 (3个元素)
+			// innerStruct.field1: [40, 50, 60] (10字节)
+			0x00, 0x00, 0x00, 0x06, // 长度字段 (6字节，3个short元素的总字节数)
 			0x00, 0x28, 0x00, 0x32, 0x00, 0x3C, // 三个short元素: 40, 50, 60
 			0x00, 0x00, // padding 字节 (2字节)
 
 			// innerStruct.field2: [70, 80] (8字节)
-			0x00, 0x00, 0x00, 0x02, // 长度字段 (2个元素)
+			0x00, 0x00, 0x00, 0x04, // 长度字段 (4字节，2个short元素的总字节数)
 			0x00, 0x46, 0x00, 0x50, // 两个short元素: 70, 80
 
 			// fieldB: [90, 100] (8字节)
-			0x00, 0x00, 0x00, 0x02, // 长度字段 (2个元素)
+			0x00, 0x00, 0x00, 0x04, // 长度字段 (4字节，2个short元素的总字节数)
 			0x00, 0x5A, 0x00, 0x64, // 两个short元素: 90, 100
 		}
 

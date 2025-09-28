@@ -184,25 +184,47 @@ func (c *IDLConverter) ParseBytesToFloat64(data []byte) (float64, []byte, error)
 }
 
 func (c *IDLConverter) ParseBytesToList(data []byte, seqType typeref.Sequence, module ast.Module) ([]interface{}, []byte, error) {
-	sequenceLen, remained, err := c.ParseBytesToLength(data)
+	sequenceBytesLen, remained, err := c.ParseBytesToLength(data)
 	if err != nil {
 		return nil, nil, err
 	}
-	result := make([]interface{}, 0, sequenceLen)
-	var v interface{}
-	for i := 0; i < int(sequenceLen); i++ {
-		v, remained, err = c.ParseDataByType(remained, seqType.InnerType, module)
+	
+	// 检查是否有足够的数据来解析sequence
+	if len(remained) < sequenceBytesLen {
+		return nil, nil, fmt.Errorf("insufficient data for sequence: expected %d bytes, got %d bytes", sequenceBytesLen, len(remained))
+	}
+	
+	// sequenceBytesLen 是后续元素的总字节数，不是元素个数
+	// remained 始终表示当前总共还剩多少字节未解析
+	result := make([]interface{}, 0)
+	sequenceData := remained[:sequenceBytesLen] // 提取sequence的数据部分
+	sequenceRemained := sequenceData             // 用于解析sequence内部元素
+	
+	for len(sequenceRemained) > 0 {
+		var v interface{}
+		v, sequenceRemained, err = c.ParseDataByType(sequenceRemained, seqType.InnerType, module)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parse sequence %v error:%v", seqType.InnerType, err.Error())
 		}
 		result = append(result, v)
-		if len(remained) > 0 && isNeedPaddingType(seqType.InnerType) {
-			remained, err = c.consumePadding(remained)
+		
+		// 如果还有剩余数据且当前元素类型需要padding，则消费padding
+		if len(sequenceRemained) > 0 && isNeedPaddingType(seqType.InnerType) {
+			sequenceRemained, err = c.consumePadding(sequenceRemained)
 			if err != nil {
 				return nil, nil, fmt.Errorf("parse sequence %v error:%v", seqType.InnerType, err.Error())
 			}
 		}
 	}
+	
+	// 检查 sequenceRemained 是否恰好为 0，如果不是 0，说明解析有问题
+	if len(sequenceRemained) != 0 {
+		return nil, nil, fmt.Errorf("sequence parsing incomplete: %d bytes remaining after parsing all elements", len(sequenceRemained))
+	}
+	
+	// remained 现在指向sequence数据之后的位置，即整个数据流中剩余未解析的字节
+	remained = remained[sequenceBytesLen:]
+	
 	return result, remained, nil
 }
 

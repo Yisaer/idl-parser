@@ -629,7 +629,7 @@ func TestParseDataByType_SequenceOfShort(t *testing.T) {
 	}{
 		{
 			name:           "parse sequence with 2 short elements",
-			data:           []byte{0, 0, 0, 2, 0x12, 0x34, 0x56, 0x78, 100, 200},
+			data:           []byte{0, 0, 0, 4, 0x12, 0x34, 0x56, 0x78, 100, 200}, // length=4字节(2个short元素)
 			expected:       []interface{}{int16(0x1234), int16(0x5678)},
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
@@ -643,7 +643,21 @@ func TestParseDataByType_SequenceOfShort(t *testing.T) {
 		},
 		{
 			name:           "should return error when insufficient data for sequence of shorts",
-			data:           []byte{0, 0, 0, 2, 0x12},
+			data:           []byte{0, 0, 0, 4, 0x12}, // length=4字节，但只有1字节数据
+			expected:       nil,
+			expectedRemain: nil,
+			expectError:    true,
+		},
+		{
+			name:           "should parse sequence with exact data length",
+			data:           []byte{0, 0, 0, 6, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC}, // length=6字节，数据有6字节，应该恰好解析完
+			expected:       []interface{}{int16(0x1234), int16(0x5678), int16(-25924)}, // 0x9ABC = -25924 in int16
+			expectedRemain: []byte{},
+			expectError:    false,
+		},
+		{
+			name:           "should return error when sequence data length mismatch",
+			data:           []byte{0, 0, 0, 4, 0x12, 0x34, 0x56}, // length=4字节，但数据有3字节，解析完2个short后还剩1字节
 			expected:       nil,
 			expectedRemain: nil,
 			expectError:    true,
@@ -680,21 +694,21 @@ func TestParseDataByType_SequenceOfBoolean(t *testing.T) {
 	}{
 		{
 			name:           "parse sequence with 3 boolean elements",
-			data:           []byte{0, 0, 0, 3, 0x01, 0x00, 0xFF, 100, 200},
+			data:           []byte{0, 0, 0, 3, 0x01, 0x00, 0xFF, 100, 200}, // length=3字节(3个boolean元素)
 			expected:       []interface{}{true, false, true},
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
 		},
 		{
 			name:           "parse sequence with 1 boolean element",
-			data:           []byte{0, 0, 0, 1, 0x00, 100, 200},
+			data:           []byte{0, 0, 0, 1, 0x00, 100, 200}, // length=1字节(1个boolean元素)
 			expected:       []interface{}{false},
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
 		},
 		{
 			name:           "should return error when insufficient data for sequence of booleans",
-			data:           []byte{0, 0, 0, 2, 0x01},
+			data:           []byte{0, 0, 0, 2, 0x01}, // length=2字节，但只有1字节数据
 			expected:       nil,
 			expectedRemain: nil,
 			expectError:    true,
@@ -801,7 +815,7 @@ func TestParseDataByType_SequenceOfString(t *testing.T) {
 	}{
 		{
 			name:           "parse sequence with 2 string elements",
-			data:           []byte{0, 0, 0, 2, 0, 0, 0, 7, 0xEF, 0xBB, 0xBF, 'a', 'b', 'c', 0x00, 0, 0, 0, 6, 0xEF, 0xBB, 0xBF, 'x', 'y', 0x00, 100, 200},
+			data:           []byte{0, 0, 0, 21, 0, 0, 0, 7, 0xEF, 0xBB, 0xBF, 'a', 'b', 'c', 0x00, 0, 0, 0, 6, 0xEF, 0xBB, 0xBF, 'x', 'y', 0x00, 100, 200}, // length=21字节(两个字符串的总字节数)
 			expected:       []interface{}{"abc", "xy"},
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
@@ -815,14 +829,14 @@ func TestParseDataByType_SequenceOfString(t *testing.T) {
 		},
 		{
 			name:           "parse sequence with 1 string element",
-			data:           []byte{0, 0, 0, 1, 0, 0, 0, 8, 0xEF, 0xBB, 0xBF, 't', 'e', 's', 't', 0x00, 100, 200},
+			data:           []byte{0, 0, 0, 12, 0, 0, 0, 8, 0xEF, 0xBB, 0xBF, 't', 'e', 's', 't', 0x00, 100, 200}, // length=12字节(1个字符串的总字节数)
 			expected:       []interface{}{"test"},
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
 		},
 		{
 			name:           "parse sequence with empty strings",
-			data:           []byte{0, 0, 0, 2, 0, 0, 0, 4, 0xEF, 0xBB, 0xBF, 0x00, 0, 0, 0, 4, 0xEF, 0xBB, 0xBF, 0x00, 100, 200},
+			data:           []byte{0, 0, 0, 16, 0, 0, 0, 4, 0xEF, 0xBB, 0xBF, 0x00, 0, 0, 0, 4, 0xEF, 0xBB, 0xBF, 0x00, 100, 200}, // length=16字节(两个空字符串的总字节数)
 			expected:       []interface{}{"", ""},
 			expectedRemain: []byte{100, 200},
 			expectError:    false,
