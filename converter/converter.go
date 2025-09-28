@@ -200,7 +200,7 @@ var (
 		typ.UnsignedLongLongType,
 		typ.BooleanType,
 		typ.FloatType,
-		// typ.SequenceType, no support dynamic slice padding
+		typ.SequenceType, // 支持动态数组，包括padding
 		typ.StringType,
 		typ.SelfDefinedTypeType,
 		typ.ArrayType,
