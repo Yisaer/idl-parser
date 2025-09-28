@@ -650,7 +650,7 @@ func TestParseDataByType_SequenceOfShort(t *testing.T) {
 		},
 		{
 			name:           "should parse sequence with exact data length",
-			data:           []byte{0, 0, 0, 6, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC}, // length=6字节，数据有6字节，应该恰好解析完
+			data:           []byte{0, 0, 0, 6, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC},     // length=6字节，数据有6字节，应该恰好解析完
 			expected:       []interface{}{int16(0x1234), int16(0x5678), int16(-25924)}, // 0x9ABC = -25924 in int16
 			expectedRemain: []byte{},
 			expectError:    false,

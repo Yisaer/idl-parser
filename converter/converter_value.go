@@ -188,18 +188,18 @@ func (c *IDLConverter) ParseBytesToList(data []byte, seqType typeref.Sequence, m
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	// 检查是否有足够的数据来解析sequence
 	if len(remained) < sequenceBytesLen {
 		return nil, nil, fmt.Errorf("insufficient data for sequence: expected %d bytes, got %d bytes", sequenceBytesLen, len(remained))
 	}
-	
+
 	// sequenceBytesLen 是后续元素的总字节数，不是元素个数
 	// remained 始终表示当前总共还剩多少字节未解析
 	result := make([]interface{}, 0)
 	sequenceData := remained[:sequenceBytesLen] // 提取sequence的数据部分
-	sequenceRemained := sequenceData             // 用于解析sequence内部元素
-	
+	sequenceRemained := sequenceData            // 用于解析sequence内部元素
+
 	for len(sequenceRemained) > 0 {
 		var v interface{}
 		v, sequenceRemained, err = c.ParseDataByType(sequenceRemained, seqType.InnerType, module)
@@ -207,7 +207,7 @@ func (c *IDLConverter) ParseBytesToList(data []byte, seqType typeref.Sequence, m
 			return nil, nil, fmt.Errorf("parse sequence %v error:%v", seqType.InnerType, err.Error())
 		}
 		result = append(result, v)
-		
+
 		// 如果还有剩余数据且当前元素类型需要padding，则消费padding
 		if len(sequenceRemained) > 0 && isNeedPaddingType(seqType.InnerType) {
 			sequenceRemained, err = c.consumePadding(sequenceRemained)
@@ -216,15 +216,15 @@ func (c *IDLConverter) ParseBytesToList(data []byte, seqType typeref.Sequence, m
 			}
 		}
 	}
-	
+
 	// 检查 sequenceRemained 是否恰好为 0，如果不是 0，说明解析有问题
 	if len(sequenceRemained) != 0 {
 		return nil, nil, fmt.Errorf("sequence parsing incomplete: %d bytes remaining after parsing all elements", len(sequenceRemained))
 	}
-	
+
 	// remained 现在指向sequence数据之后的位置，即整个数据流中剩余未解析的字节
 	remained = remained[sequenceBytesLen:]
-	
+
 	return result, remained, nil
 }
 
