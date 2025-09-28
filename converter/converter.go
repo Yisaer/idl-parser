@@ -231,11 +231,11 @@ func (c *IDLConverter) Decode(schemaID string, data []byte) (map[string]interfac
 		return nil, err
 	}
 	c.TotalBytes = len(data)
-	v, _, err := c.ParseBytesToStruct(data, *targetSts, *targetModule, true)
+	v, _, err := c.ParseBytesToStruct(data, *targetSts, *targetModule)
 	return v, err
 }
 
-func (c *IDLConverter) ParseDataByType(data []byte, t typeref.TypeRef, module ast.Module, isLastField bool) (interface{}, []byte, error) {
+func (c *IDLConverter) ParseDataByType(data []byte, t typeref.TypeRef, module ast.Module) (interface{}, []byte, error) {
 
 	var result interface{}
 	var remained []byte
@@ -247,7 +247,7 @@ func (c *IDLConverter) ParseDataByType(data []byte, t typeref.TypeRef, module as
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not array type", t.TypeRefType())
 		}
-		result, remained, err = c.ParseArray(data, arrayType, module, isLastField)
+		result, remained, err = c.ParseArray(data, arrayType, module)
 	case typ.OctetType:
 		otResult, newRemained, newErr := c.ParseOctet(data)
 		result, remained, err = otResult, newRemained, newErr
@@ -280,16 +280,16 @@ func (c *IDLConverter) ParseDataByType(data []byte, t typeref.TypeRef, module as
 		result, remained, err = doubleResult, newRemained, newErr
 	case typ.SequenceType:
 		seq := t.(typeref.Sequence)
-		result, remained, err = c.ParseBytesToList(data, seq, module, isLastField)
+		result, remained, err = c.ParseBytesToList(data, seq, module)
 	case typ.StringType:
 		st, ok := t.(typeref.StringType)
 		if !ok {
 			return nil, nil, fmt.Errorf("type %v is not string type", t.TypeRefType())
 		}
-		result, remained, err = c.ParseString(data, st, module, isLastField)
+		result, remained, err = c.ParseString(data, st, module)
 	case typ.SelfDefinedTypeType:
 		definedType := t.(typeref.TypeName)
-		result, remained, err = c.ParseSelfDefineType(data, definedType, module, isLastField)
+		result, remained, err = c.ParseSelfDefineType(data, definedType, module)
 	default:
 		return nil, nil, fmt.Errorf("unsupported type:%v", t.TypeName())
 	}
@@ -299,17 +299,23 @@ func (c *IDLConverter) ParseDataByType(data []byte, t typeref.TypeRef, module as
 	return result, remained, nil
 }
 
-func (c *IDLConverter) ParseArray(data []byte, arrayType typeref.ArrayType, module ast.Module, isParLast bool) ([]interface{}, []byte, error) {
+func (c *IDLConverter) ParseArray(data []byte, arrayType typeref.ArrayType, module ast.Module) ([]interface{}, []byte, error) {
 	remained := data
 	var err error
 	var v interface{}
 	result := make([]interface{}, 0, arrayType.ArraySize)
 	for i := 0; i < arrayType.ArraySize; i++ {
-		v, remained, err = c.ParseDataByType(remained, arrayType.InnerType, module, isParLast && i == arrayType.ArraySize-1)
+		v, remained, err = c.ParseDataByType(remained, arrayType.InnerType, module)
 		if err != nil {
 			return nil, nil, fmt.Errorf("Parse array element %v error:%v", i, err.Error())
 		}
 		result = append(result, v)
+		if len(remained) > 0 && isNeedPaddingType(arrayType.InnerType) {
+			remained, err = c.consumePadding(remained)
+			if err != nil {
+				return nil, nil, fmt.Errorf("Parse array element %v error:%v", i, err.Error())
+			}
+		}
 	}
 	return result, remained, nil
 }
@@ -364,7 +370,7 @@ func (c *IDLConverter) ParseDouble(data []byte) (float64, []byte, error) {
 	return result, remained, err
 }
 
-func (c *IDLConverter) ParseString(data []byte, st typeref.StringType, _ ast.Module, isLast bool) (interface{}, []byte, error) {
+func (c *IDLConverter) ParseString(data []byte, st typeref.StringType, _ ast.Module) (interface{}, []byte, error) {
 	var result interface{}
 	var remained []byte
 	var err error
@@ -376,26 +382,26 @@ func (c *IDLConverter) ParseString(data []byte, st typeref.StringType, _ ast.Mod
 		if err != nil {
 			return nil, nil, err
 		}
-		remained, err = c.consumePadding(remained, isLast)
-		if err != nil {
-			return nil, nil, fmt.Errorf("consuming dynamic string field meet error:%v", err.Error())
-		}
+		//remained, err = c.consumePadding(remained, isLast)
+		//if err != nil {
+		//	return nil, nil, fmt.Errorf("consuming dynamic string field meet error:%v", err.Error())
+		//}
 	}
 	return result, remained, nil
 }
 
-func (c *IDLConverter) ParseSelfDefineType(data []byte, definedType typeref.TypeName, module ast.Module, isParLast bool) (interface{}, []byte, error) {
+func (c *IDLConverter) ParseSelfDefineType(data []byte, definedType typeref.TypeName, module ast.Module) (interface{}, []byte, error) {
 	for _, content := range module.Content {
 		if content.GetName() == definedType.Name && content.ModuleContentType() == typ.StructType {
 			st := content.(struct_type.Struct)
-			return c.ParseBytesToStruct(data, st, module, isParLast)
+			return c.ParseBytesToStruct(data, st, module)
 		}
 	}
 	return nil, nil, fmt.Errorf("unsupported type:%v", definedType.Name)
 }
 
-func (c *IDLConverter) consumePadding(remained []byte, isLast bool) ([]byte, error) {
-	if len(remained) > 0 && !isLast {
+func (c *IDLConverter) consumePadding(remained []byte) ([]byte, error) {
+	if len(remained) > 0 {
 		consumedBytes := c.TotalBytes - len(remained)
 		extraBytesLength := consumedBytes % c.PaddingLength
 		paddingBytesLength := c.PaddingLength - extraBytesLength

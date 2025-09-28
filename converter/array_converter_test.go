@@ -49,7 +49,7 @@ func TestParseArrayTypes(t *testing.T) {
 			require.Nil(t, typeResult.Err)
 			require.Equal(t, typ.ArrayType, typeResult.Output.TypeRefType())
 			converter := createTestConverter(false) // big endian
-			result, remain, err := converter.ParseDataByType(test.data, typeResult.Output, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(test.data, typeResult.Output, ast.Module{})
 			require.NoError(t, err)
 			require.Equal(t, test.expected, result)
 			require.Empty(t, remain)
@@ -85,7 +85,7 @@ func TestParseArrayTypesLittleEndian(t *testing.T) {
 			require.Nil(t, typeResult.Err)
 			require.Equal(t, typ.ArrayType, typeResult.Output.TypeRefType())
 			converter := createTestConverter(true) // little endian
-			result, remain, err := converter.ParseDataByType(test.data, typeResult.Output, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(test.data, typeResult.Output, ast.Module{})
 			require.NoError(t, err)
 			require.Equal(t, test.expected, result)
 			require.Empty(t, remain)
@@ -121,7 +121,7 @@ func TestParseArrayError(t *testing.T) {
 			converter := createTestConverter(false)
 
 			// 解析数据应该失败
-			result, remain, err := converter.ParseDataByType(test.data, typeResult.Output, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(test.data, typeResult.Output, ast.Module{})
 			require.Error(t, err)
 			require.Nil(t, result)
 			require.Nil(t, remain)

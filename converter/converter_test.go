@@ -114,7 +114,7 @@ func TestParseDataByType_Octet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			octetType := typeref.NewOctetType()
 			converter := createTestConverter(tt.isLittleEndian)
-			result, remain, err := converter.ParseDataByType(tt.data, octetType, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(tt.data, octetType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -132,7 +132,7 @@ func TestParseDataByType_UnsupportedType(t *testing.T) {
 	mockType := &mockUnsupportedType{}
 	converter := createTestConverter(false)
 
-	result, remain, err := converter.ParseDataByType([]byte{1, 2, 3}, mockType, ast.Module{}, true)
+	result, remain, err := converter.ParseDataByType([]byte{1, 2, 3}, mockType, ast.Module{})
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "unsupported type")
@@ -211,7 +211,7 @@ func TestParseDataByType_Short(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			shortType := typeref.NewShortType()
 			converter := createTestConverter(tt.isLittleEndian)
-			result, remain, err := converter.ParseDataByType(tt.data, shortType, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(tt.data, shortType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -272,7 +272,7 @@ func TestParseDataByType_UnsignedShort(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			unsignedShortType := typeref.NewUnsignedShortType()
 			converter := createTestConverter(tt.isLittleEndian)
-			result, remain, err := converter.ParseDataByType(tt.data, unsignedShortType, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(tt.data, unsignedShortType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -333,7 +333,7 @@ func TestParseDataByType_Long(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			longType := typeref.NewLongType()
 			converter := createTestConverter(tt.isLittleEndian)
-			result, remain, err := converter.ParseDataByType(tt.data, longType, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(tt.data, longType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -382,7 +382,7 @@ func TestParseDataByType_UnsignedLong(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			unsignedLongType := typeref.NewUnsignedLong()
 			converter := createTestConverter(false)
-			result, remain, err := converter.ParseDataByType(tt.data, unsignedLongType, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(tt.data, unsignedLongType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -431,7 +431,7 @@ func TestParseDataByType_LongLong(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			longLongType := typeref.NewLongLongType()
 			converter := createTestConverter(false)
-			result, remain, err := converter.ParseDataByType(tt.data, longLongType, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(tt.data, longLongType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -480,7 +480,7 @@ func TestParseDataByType_UnsignedLongLong(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			unsignedLongLongType := typeref.NewUnsignedLongLong()
 			converter := createTestConverter(false)
-			result, remain, err := converter.ParseDataByType(tt.data, unsignedLongLongType, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(tt.data, unsignedLongLongType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -536,7 +536,7 @@ func TestParseDataByType_Boolean(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			booleanType := typeref.NewBooleanType()
 			converter := createTestConverter(false)
-			result, remain, err := converter.ParseDataByType(tt.data, booleanType, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(tt.data, booleanType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -605,7 +605,7 @@ func TestParseDataByType_Float(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			floatType := typeref.NewFloatType()
 			converter := createTestConverter(tt.isLittleEndian)
-			result, remain, err := converter.ParseDataByType(tt.data, floatType, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(tt.data, floatType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -656,7 +656,7 @@ func TestParseDataByType_SequenceOfShort(t *testing.T) {
 			sequenceType := typeref.NewSequence(shortType)
 			converter := createTestConverter(false)
 
-			result, remain, err := converter.ParseDataByType(tt.data, sequenceType, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(tt.data, sequenceType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -707,7 +707,7 @@ func TestParseDataByType_SequenceOfBoolean(t *testing.T) {
 			sequenceType := typeref.NewSequence(booleanType)
 			converter := createTestConverter(false)
 
-			result, remain, err := converter.ParseDataByType(tt.data, sequenceType, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(tt.data, sequenceType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -777,7 +777,7 @@ func TestParseDataByType_String(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			stringType := typeref.NewStringType()
 			converter := createTestConverter(false)
-			result, remain, err := converter.ParseDataByType(tt.data, stringType, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(tt.data, stringType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)
@@ -856,7 +856,7 @@ func TestParseDataByType_SequenceOfString(t *testing.T) {
 			sequenceType := typeref.NewSequence(stringType)
 			converter := createTestConverter(false)
 
-			result, remain, err := converter.ParseDataByType(tt.data, sequenceType, ast.Module{}, true)
+			result, remain, err := converter.ParseDataByType(tt.data, sequenceType, ast.Module{})
 
 			if tt.expectError {
 				require.Error(t, err)

@@ -7,21 +7,39 @@ import (
 
 	"github.com/yisaer/idl-parser/ast"
 	"github.com/yisaer/idl-parser/ast/struct_type"
+	"github.com/yisaer/idl-parser/ast/typ"
 	"github.com/yisaer/idl-parser/ast/typeref"
 )
 
-func (c *IDLConverter) ParseBytesToStruct(data []byte, st struct_type.Struct, module ast.Module, isParLast bool) (map[string]interface{}, []byte, error) {
+func isNeedPaddingType(t typeref.TypeRef) bool {
+	switch t.TypeRefType() {
+	case typ.StringType:
+		st := t.(typeref.StringType)
+		return st.Length == nil
+	case typ.SequenceType:
+		return true
+	}
+	return false
+}
+
+func (c *IDLConverter) ParseBytesToStruct(data []byte, st struct_type.Struct, module ast.Module) (map[string]interface{}, []byte, error) {
 	var v interface{}
 	var err error
 	var remained []byte
 	remained = data
 	m := make(map[string]any, len(st.Fields))
-	for index, field := range st.Fields {
-		v, remained, err = c.ParseDataByType(remained, field.Type, module, isParLast && index == len(st.Fields)-1)
+	for _, field := range st.Fields {
+		v, remained, err = c.ParseDataByType(remained, field.Type, module)
 		if err != nil {
 			return nil, nil, fmt.Errorf("struct %v parse field %v error:%v", st, field.Name, err.Error())
 		}
 		m[field.Name] = v
+		if len(remained) > 0 && isNeedPaddingType(field.Type) {
+			remained, err = c.consumePadding(remained)
+			if err != nil {
+				return nil, nil, fmt.Errorf("struct %v parse field %v error:%v", st, field.Name, err.Error())
+			}
+		}
 	}
 	return m, remained, nil
 }
@@ -165,7 +183,7 @@ func (c *IDLConverter) ParseBytesToFloat64(data []byte) (float64, []byte, error)
 	return value, remainData, nil
 }
 
-func (c *IDLConverter) ParseBytesToList(data []byte, seqType typeref.Sequence, module ast.Module, isLast bool) ([]interface{}, []byte, error) {
+func (c *IDLConverter) ParseBytesToList(data []byte, seqType typeref.Sequence, module ast.Module) ([]interface{}, []byte, error) {
 	sequenceLen, remained, err := c.ParseBytesToLength(data)
 	if err != nil {
 		return nil, nil, err
@@ -173,15 +191,17 @@ func (c *IDLConverter) ParseBytesToList(data []byte, seqType typeref.Sequence, m
 	result := make([]interface{}, 0, sequenceLen)
 	var v interface{}
 	for i := 0; i < int(sequenceLen); i++ {
-		v, remained, err = c.ParseDataByType(remained, seqType.InnerType, module, isLast && i == sequenceLen-1)
+		v, remained, err = c.ParseDataByType(remained, seqType.InnerType, module)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parse sequence %v error:%v", seqType.InnerType, err.Error())
 		}
 		result = append(result, v)
-	}
-	remained, err = c.consumePadding(remained, isLast)
-	if err != nil {
-		return nil, nil, err
+		if len(remained) > 0 && isNeedPaddingType(seqType.InnerType) {
+			remained, err = c.consumePadding(remained)
+			if err != nil {
+				return nil, nil, fmt.Errorf("parse sequence %v error:%v", seqType.InnerType, err.Error())
+			}
+		}
 	}
 	return result, remained, nil
 }

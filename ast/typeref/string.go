@@ -11,7 +11,8 @@ import (
 
 type StringType struct {
 	SelfType string `json:"self_type"`
-	Length   *int   `json:"length,omitempty"`
+	// If Length is nil, this is a dynamic string, otherwise this is a fixed length string
+	Length *int `json:"length,omitempty"`
 }
 
 func NewStringType() StringType {
