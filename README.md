@@ -68,7 +68,7 @@ Array is the fixed list of given element
 ```txt
 module m {
      struct c {
-        octet<16> idList;
+        octet[10] idList;
      }
 }
 ```
