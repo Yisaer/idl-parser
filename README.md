@@ -8,17 +8,99 @@ An OMG IDL (Interface Definition Language) parser written in Go, inspired by gom
 * Parses OMG IDL syntax into structured Go types
 * Supports common IDL constructs:
   * Modules
-  * Structs
-  * Bitsets
-  * Bitfields
-  * Octet
-  * Short / Unsigned Short
-  * Long / Unsigned Long / Long Long / Unsigned Long Long
-  * Sequence
+  * Basic Types
   * Type references
+  * Arrays/Sequence
   * Annotations
 * Simple API with Parse() function
 * Comprehensive test coverage
+
+## Basic Type Transform
+
+| IDL Base Type        | Common Base Type | Description             |
+|----------------------|------------------|-------------------------|
+| `octet`              | `uint8`          | 8-bit unsigned integer  |
+| `short`              | `int16`          | 16-bit signed integer   |
+| `unsigned short`     | `uint16`         | 16-bit unsigned integer |
+| `long`               | `int32`          | 32-bit signed integer   |
+| `unsigned long`      | `uint32`         | 32-bit unsigned integer |
+| `long long`          | `int64`          | 64-bit signed integer   |
+| `unsigned long long` | `uint64`         | 64-bit unsigned integer |
+| `float`              | `float32`        | 32-bit floating point   |
+| `double`             | `float64`        | 64-bit floating point   |
+| `boolean`            | `bool`           | Boolean value           |
+| `string`             | `string`         | Variable-length string  |
+
+```txt
+module m {
+     struct c {
+        octet id1;
+        short id2;
+        unsigned short id3;
+     }
+}
+```
+
+### Dynamic String
+
+```txt
+module m {
+     struct c {
+        string name;
+     }
+}
+```
+
+### Fixed Length String
+
+```txt
+module m {
+     struct c {
+        string<10> name;
+     }
+}
+```
+
+### Array 
+
+Array is the fixed list of given element
+
+```txt
+module m {
+     struct c {
+        octet<16> idList;
+     }
+}
+```
+
+### Sequence
+
+Array is the dynamic list of given element
+
+```txt
+module m {
+     struct c {
+        sequence<octet> idList;
+     }
+}
+```
+
+### TypeRef
+
+```txt
+module m {
+    struct c1 {
+        octet id1;
+        short id2;
+        unsigned short id3;
+    }
+    
+    struct c2 {
+        c1      refc1;
+        short   id2;
+    }
+}
+```
 
 ## Installation
 
