@@ -6,3 +6,20 @@ module a {
         }
     };
 }
+
+
+module a {
+        struct toplevel {
+            octet id1;
+            sequence<sublevel> id2;
+            octet id3;
+            sequence<sublevel> id4;
+        }
+
+        struct sublevel {
+             octet id5;
+            sequence<sublevel> id6;
+            octet id7;
+            sequence<sublevel> id8;
+        }
+}
