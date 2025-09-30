@@ -14,12 +14,12 @@ import (
 )
 
 type IDlConverterConfig struct {
-	HeaderLength            int
-	EnableArrayLengthHeader bool
-	IsLittleEndian          bool
-	LengthFieldLength       int // should be 1,2,4 bytes
-	SchemaPath              string
-	PaddingLength           int // should be 1,2,4,8,16,32,64
+	HeaderLength            int    `json:"headerLength"`
+	EnableArrayLengthHeader bool   `json:"enableArrayLengthHeader"`
+	IsLittleEndian          bool   `json:"isLittleEndian"`
+	LengthFieldLength       int    `json:"lengthFieldLength"` // should be 1,2,4 bytes
+	SchemaPath              string `json:"schemaPath"`
+	PaddingLength           int    `json:"paddingLength"` // should be 1,2,4,8,16,32,64
 }
 
 type IDLConverter struct {
