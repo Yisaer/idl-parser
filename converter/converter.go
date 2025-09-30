@@ -14,10 +14,12 @@ import (
 )
 
 type IDlConverterConfig struct {
-	IsLittleEndian    bool
-	LengthFieldLength int // should be 1,2,4 bytes
-	SchemaPath        string
-	PaddingLength     int // should be 1,2,4,8,16,32,64
+	HeaderLength            int
+	EnableArrayLengthHeader bool
+	IsLittleEndian          bool
+	LengthFieldLength       int // should be 1,2,4 bytes
+	SchemaPath              string
+	PaddingLength           int // should be 1,2,4,8,16,32,64
 }
 
 type IDLConverter struct {
@@ -230,7 +232,7 @@ func (c *IDLConverter) Decode(schemaID string, data []byte) (map[string]interfac
 	if err != nil {
 		return nil, err
 	}
-	c.TotalBytes = len(data)
+	c.TotalBytes = len(data) + c.HeaderLength
 	v, _, err := c.ParseBytesToStruct(data, *targetSts, *targetModule)
 	return v, err
 }
@@ -302,20 +304,24 @@ func (c *IDLConverter) ParseDataByType(data []byte, t typeref.TypeRef, module as
 func (c *IDLConverter) ParseArray(data []byte, arrayType typeref.ArrayType, module ast.Module) ([]interface{}, []byte, error) {
 	remained := data
 	var err error
+	if c.EnableArrayLengthHeader {
+		var arrayLength int
+		arrayLength, remained, err = c.ParseBytesToLength(remained)
+		if err != nil {
+			return nil, nil, fmt.Errorf("parse array length failed: %v", err)
+		}
+		if arrayLength != arrayType.ArraySize {
+			return nil, nil, fmt.Errorf("array length %v does not match defined array size %v", arrayLength, arrayType.ArraySize)
+		}
+	}
 	var v interface{}
 	result := make([]interface{}, 0, arrayType.ArraySize)
 	for i := 0; i < arrayType.ArraySize; i++ {
 		v, remained, err = c.ParseDataByType(remained, arrayType.InnerType, module)
 		if err != nil {
-			return nil, nil, fmt.Errorf("Parse array element %v error:%v", i, err.Error())
+			return nil, nil, fmt.Errorf("parse array element %v error:%v", i, err.Error())
 		}
 		result = append(result, v)
-		if len(remained) > 0 && isNeedPaddingType(arrayType.InnerType) {
-			remained, err = c.consumePadding(remained)
-			if err != nil {
-				return nil, nil, fmt.Errorf("Parse array element %v error:%v", i, err.Error())
-			}
-		}
 	}
 	return result, remained, nil
 }
@@ -404,13 +410,14 @@ func (c *IDLConverter) consumePadding(remained []byte) ([]byte, error) {
 	if len(remained) > 0 {
 		consumedBytes := c.TotalBytes - len(remained)
 		extraBytesLength := consumedBytes % c.PaddingLength
+		if extraBytesLength < 1 {
+			return remained, nil
+		}
 		paddingBytesLength := c.PaddingLength - extraBytesLength
 		if paddingBytesLength > len(remained) {
 			return remained, fmt.Errorf("padding length exceeds remained length")
 		}
-		if extraBytesLength > 0 {
-			return remained[paddingBytesLength:], nil
-		}
+		return remained[paddingBytesLength:], nil
 	}
 	return remained, nil
 }

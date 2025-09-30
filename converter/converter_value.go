@@ -31,13 +31,13 @@ func (c *IDLConverter) ParseBytesToStruct(data []byte, st struct_type.Struct, mo
 	for _, field := range st.Fields {
 		v, remained, err = c.ParseDataByType(remained, field.Type, module)
 		if err != nil {
-			return nil, nil, fmt.Errorf("struct %v parse field %v error:%v", st, field.Name, err.Error())
+			return nil, nil, fmt.Errorf("struct %v parse field %v failed, err:%v", st, field.Name, err.Error())
 		}
 		m[field.Name] = v
 		if len(remained) > 0 && isNeedPaddingType(field.Type) {
 			remained, err = c.consumePadding(remained)
 			if err != nil {
-				return nil, nil, fmt.Errorf("struct %v parse field %v error:%v", st, field.Name, err.Error())
+				return nil, nil, fmt.Errorf("struct %v parse field %v failed, err:%v", st, field.Name, err.Error())
 			}
 		}
 	}
@@ -186,12 +186,12 @@ func (c *IDLConverter) ParseBytesToFloat64(data []byte) (float64, []byte, error)
 func (c *IDLConverter) ParseBytesToList(data []byte, seqType typeref.Sequence, module ast.Module) ([]interface{}, []byte, error) {
 	sequenceBytesLen, remained, err := c.ParseBytesToLength(data)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("parse sequence length failed, err: %v", err)
 	}
 
 	// 检查是否有足够的数据来解析sequence
 	if len(remained) < sequenceBytesLen {
-		return nil, nil, fmt.Errorf("insufficient data for sequence: expected %d bytes, got %d bytes", sequenceBytesLen, len(remained))
+		return nil, nil, fmt.Errorf("parse sequence length failed, insufficient data for sequence: expected %d bytes, got %d bytes", sequenceBytesLen, len(remained))
 	}
 
 	// sequenceBytesLen 是后续元素的总字节数，不是元素个数
@@ -199,22 +199,15 @@ func (c *IDLConverter) ParseBytesToList(data []byte, seqType typeref.Sequence, m
 	result := make([]interface{}, 0)
 	sequenceData := remained[:sequenceBytesLen] // 提取sequence的数据部分
 	sequenceRemained := sequenceData            // 用于解析sequence内部元素
-
+	var index int
 	for len(sequenceRemained) > 0 {
 		var v interface{}
 		v, sequenceRemained, err = c.ParseDataByType(sequenceRemained, seqType.InnerType, module)
 		if err != nil {
-			return nil, nil, fmt.Errorf("parse sequence %v error:%v", seqType.InnerType, err.Error())
+			return nil, nil, fmt.Errorf("parse sequence %v %v error:%v", index, seqType.InnerType, err.Error())
 		}
 		result = append(result, v)
-
-		// 如果还有剩余数据且当前元素类型需要padding，则消费padding
-		if len(sequenceRemained) > 0 && isNeedPaddingType(seqType.InnerType) {
-			sequenceRemained, err = c.consumePadding(sequenceRemained)
-			if err != nil {
-				return nil, nil, fmt.Errorf("parse sequence %v error:%v", seqType.InnerType, err.Error())
-			}
-		}
+		index++
 	}
 
 	// 检查 sequenceRemained 是否恰好为 0，如果不是 0，说明解析有问题
