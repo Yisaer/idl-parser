@@ -14,6 +14,7 @@ import (
 )
 
 type IDlConverterConfig struct {
+	HeaderLength            int
 	EnableArrayLengthHeader bool
 	IsLittleEndian          bool
 	LengthFieldLength       int // should be 1,2,4 bytes
@@ -231,7 +232,7 @@ func (c *IDLConverter) Decode(schemaID string, data []byte) (map[string]interfac
 	if err != nil {
 		return nil, err
 	}
-	c.TotalBytes = len(data)
+	c.TotalBytes = len(data) + c.HeaderLength
 	v, _, err := c.ParseBytesToStruct(data, *targetSts, *targetModule)
 	return v, err
 }
@@ -409,13 +410,14 @@ func (c *IDLConverter) consumePadding(remained []byte) ([]byte, error) {
 	if len(remained) > 0 {
 		consumedBytes := c.TotalBytes - len(remained)
 		extraBytesLength := consumedBytes % c.PaddingLength
+		if extraBytesLength < 1 {
+			return remained, nil
+		}
 		paddingBytesLength := c.PaddingLength - extraBytesLength
 		if paddingBytesLength > len(remained) {
 			return remained, fmt.Errorf("padding length exceeds remained length")
 		}
-		if extraBytesLength > 0 {
-			return remained[paddingBytesLength:], nil
-		}
+		return remained[paddingBytesLength:], nil
 	}
 	return remained, nil
 }
